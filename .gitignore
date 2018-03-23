@@ -1,0 +1,8 @@
+Basin_Descriptions/**
+GIS/**
+pictures/**
+*xx*
+*.Rhistory
+*_Report.docx
+*.Rmd
+*.html
