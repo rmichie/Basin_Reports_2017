@@ -51,10 +51,10 @@ owri.db <- "//deqhq1/WQNPS/NPS_Annual_Reports/2017/OWRI_1995_2016/OwriDbExport_0
 my.year <- 2016
 
 # The input gis dir
-gis_dir <- "GIS"
+lu_dir <- "lookup_tables"
 
 # Import subbasin and Basin Report area names
-owrd_huc8_shp <- readOGR(dsn=gis_dir,layer="WBD_HU08_OR", integer64="warn.loss", verbose=FALSE)
+owrd_huc8_shp <- readOGR(dsn=lu_dir,layer="WBD_HU08_OR", integer64="warn.loss", verbose=FALSE)
 
 # get the huc8 names in the OWRD basin so I can use it to filter OWRI projects
 huc8.df <- owrd_huc8_shp@data[owrd_huc8_shp@data$BasReport==owrd_basin,]
@@ -147,7 +147,7 @@ require(dplyr)
 # Can't get these fucntions to work.
 #source("functions/funHelpers.R")
 
-nlcd_huc8_df <- read.csv("GIS/NLCD_2011_LU_sqm_by_HUC8.txt", quote="", stringsAsFactors=FALSE)
+nlcd_huc8_df <- read.csv("lookup_tables/NLCD_2011_LU_sqm_by_HUC8.txt", quote="", stringsAsFactors=FALSE)
 
 #landuse.df <- get.landuse(nlcd_huc8_df=nlcd_huc8_df, geo_unit=owrd_basin, geo_unit_col="BasReport", group_col="BasReport")
 #landuse.huc8.df <- get.landuse(nlcd_huc8_df=nlcd_huc8_df, geo_unit=owrd_basin, geo_unit_col="BasReport", group_col="HUC_8_NAME")
@@ -184,7 +184,7 @@ knitr::kable(landuse.huc8.df, format = "markdown", padding = 2, digits = 1, capt
 
 ```
 
-![**Picture Caption:** _Landuse in the The North Coast Administrative Basin._](GIS/Landcover_NorthCoast.png){width=75%}
+![**Picture Caption:** _Landuse in the The North Coast Administrative Basin._](pictures/Landcover_NorthCoast.png){width=75%}
 
 ##Basin Contacts
 ```{r basin contact, echo = FALSE, message = FALSE, warning=FALSE, error=TRUE}
@@ -213,11 +213,11 @@ require(dplyr)
 require(tidyr)
 require(rgdal)
 
-gis_dir <- "GIS"
+lu_dir <- "lookup_tables"
 
 # Read the wq limited feature classes
-wqlim_streams_shp <- readOGR(dsn=gis_dir,layer="2012_wqlim_streams", integer64="warn.loss", verbose=FALSE)
-wqlim_lakes_shp <- readOGR(dsn=gis_dir,layer="2012_wqlim_lakes", integer64="warn.loss", verbose=FALSE)
+wqlim_streams_shp <- readOGR(dsn=lu_dir,layer="2012_wqlim_streams", integer64="warn.loss", verbose=FALSE)
+wqlim_lakes_shp <- readOGR(dsn=lu_dir,layer="2012_wqlim_lakes", integer64="warn.loss", verbose=FALSE)
 
 wqlim1.df <- wqlim_streams_shp@data
 wqlim2.df <- wqlim_lakes_shp@data
