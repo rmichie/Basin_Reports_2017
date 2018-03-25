@@ -35,7 +35,7 @@ require(knitr)
 require(rgdal)
 knitr::opts_chunk$set(echo = FALSE)
 
-setwd("//deqhq1/WQNPS/NPS_Annual_Reports/2017/Basin_Reports/")
+setwd("//deqhq1/WQNPS/NPS_Annual_Reports/2017/Basin_Reports_2017/")
 
 source("functions/funHelpers.R")
 
