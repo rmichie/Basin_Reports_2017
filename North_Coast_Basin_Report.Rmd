@@ -4,36 +4,37 @@ author: 'Ryan Michie'
 date: "January 2018"
 output:
   html_document:
+    css: Y:\NPS_Annual_Reports\2017\Basin_Reports_2017\DEQTemplate.css
+    fig_caption: true
     mode: selfcontained
-    number_sections: yes
-    css: Y:\NPS_Annual_Reports\2017\Basin_Reports\DEQTemplate.css
-    toc: yes
+    number_sections: true
+    toc: true
     toc_depth: 4
-    toc_float: yes
-    fig_caption: yes
+    toc_float: true
   word_document:
-    toc: yes
-    fig_caption: yes
+    reference_docx: \\deqhq1\WQNPS\NPS_Annual_Reports\2017\Basin_Reports_2017\BasinReportTemplate.docx
+    toc: false
+    fig_caption: true
   pdf_document:
-    toc: yes
-    toc_depth: '4'
-    fig_caption: yes
-always_allow_html: yes
+    fig_caption: true
+always_allow_html: true
 ---
 
-<style>
-    .col2 {
-    columns: 2 200px;         /* number of columns and width in pixels*/
-    -webkit-columns: 2 200px; /* chrome, safari */
-    -moz-columns: 2 200px;    /* firefox */
-  }
-</style>
-
-
-```{r setup, include=FALSE}
+```{r global_setup, include=FALSE}
 require(knitr)
+knitr::opts_chunk$set(echo = FALSE,
+                      message = FALSE,
+                      warning=FALSE,
+                      error = TRUE,
+                      cache = FALSE,
+                      cache.comments = FALSE,
+                      include = TRUE,
+                      autodep = TRUE,
+                      fig.align = "center",
+                      eval=TRUE)
+
 require(rgdal)
-knitr::opts_chunk$set(echo = FALSE)
+require(captioner)
 
 setwd("//deqhq1/WQNPS/NPS_Annual_Reports/2017/Basin_Reports_2017/")
 
@@ -64,10 +65,12 @@ huc8.name <- unique(huc8.df$HU_8_NAME)
 # get the water quality status and trend summary data frames as a list where each list is for a sepetate subbasin
 wqst.list <- get.wqst.summary(huc8.list=huc8.df$HUC_8, df.dir=wqst.dir)
 
+tbls  <- captioner(prefix="Table")
+figs <- captioner(prefix="Figure")
 
 ```
 
-```{r basemap for html, echo = FALSE, message = FALSE, warning=FALSE, error=TRUE}
+```{r basemap for html}
 require(leaflet)
 require(raster)
 require(rgdal)
@@ -135,13 +138,12 @@ basemap <- leaflet(width = "100%") %>%
 basemap
 ```
 
-#- Basin Description
+# Basin Description
 The North Coast Basin extends from the Columbia River to the southern Tillamook County line and consists of eight watersheds. Six watersheds drain to the Pacific Ocean: Necanicum, Nehalem, Tillamook Bay, Nestucca, Netarts/Sand Lake and Neskowin and two drain to the lower Columbia River: Lower Columbia and Lower Columbia-Clatskanie. The North Coast Basin includes most of Clatsop, Columbia and Tillamook counties and the major cities of Tillamook, Vernonia, Cannon Beach, Astoria and Rockaway Beach. The three largest bays of Tillamook, Nehalem and Netarts provide for economic and recreational opportunities in the region. Chief among them is commercial and recreational shellfishing with over 2.3 million pounds of oysters and clams harvested annually in Oregon. Other important aquatic resources include the freshwater streams that provide critical habitat for native salmon and drinking water for area residents. Finally, the beaches, lakes, streams and estuaries all provide numerous recreational (swimming, fishing, boating, etc.) opportunities throughout the region.
 
 Forestry is the predominant land use in the subbasin covering nearly 95 percent of the landscape, with the Tillamook State Forest being the largest portion. Agricultural land use is a small portion of the basin with most of it occurring in the lower portions of the rivers and near the bays. The dairy industry makes up much of this use with dairies located in the lower Tillamook, Nestucca and Nehalem watersheds. Cities are generally located in the coastal plains, adjacent to rivers, bays or the ocean.
 
-```{r landuse table, echo = FALSE, message = FALSE, warning=FALSE, error=TRUE}
-
+```{r landuse_table}
 require(dplyr)
 
 # Can't get these fucntions to work.
@@ -180,14 +182,20 @@ landuse.huc8.df <- nlcd_huc8_df %>%
 
 colnames(landuse.huc8.df) <- c("Subbasin", "Watershed Area (km2)", "%Urban/Roads", "%Forest", "%Cultivated"," %Range/Forest Disturbance", "%Other")
 
-knitr::kable(landuse.huc8.df, format = "markdown", padding = 2, digits = 1, caption = paste0("2011 Land use and land cover for each subbasin in the ",owrd_basin,"."))
+knitr::kable(landuse.huc8.df, padding = 2, digits = 1, caption = tbls(name="tbl.landuse_table", caption=paste0("2011 Land use and land cover for each subbasin in the ",owrd_basin,".")))
 
 ```
 
-![**Picture Caption:** _Landuse in the The North Coast Administrative Basin._](pictures/Landcover_NorthCoast.png){width=75%}
 
-##Basin Contacts
-```{r basin contact, echo = FALSE, message = FALSE, warning=FALSE, error=TRUE}
+```{r, lancover_map, fig.cap=figs(name="figs.landcover_map",caption=paste0("Landuse in the the ",owrd_basin," administrative basin."))}
+
+knitr::include_graphics(path = "pictures/Landcover_NorthCoast.png")
+
+```
+
+
+## Basin Contacts
+```{r basin_contact}
 require(readxl)
 
 bc.df <- read_excel(path="Info_Integrated.xlsx", sheet="1_bc_info")
@@ -199,16 +207,16 @@ bc.df <- bc.df[bc.df$owrd_basin %in% owrd_basin,c("owrd_basin", "bc.info")]
 colnames(bc.df) <- c('Administrative Area', 'DEQ Basin Coordinator')
 #colnames(bc.df) <- c('Administrative Area', 'DEQ Basin Coordinator', 'Phone', 'Email')
 
-knitr::kable(bc.df, format = "markdown", padding = 2, digits = 1, caption = "Oregon DEQ basin contact")
+knitr::kable(bc.df, padding = 2, digits = 1, caption = tbls(name = "tbl.basin_contact", caption="Oregon DEQ basin contact."))
 ```
 
-#- Water Quality Impairments and TMDLs
+# Water Quality Impairments and TMDLs
 
-##Water Quality Impaired Stream Segments
+## Water Quality Impaired Stream Segments
 
 Under section 303(d) of the Clean Water Act, states, territories and authorized tribes must submit lists of impaired waters. These waters are too polluted or otherwise degraded to meet water quality standards. The law requires that states establish priority rankings for waters on the lists and develop Total Maximum Daily Loads (TMDLs) for these waters. - Sources: [ODEQ](http://www.oregon.gov/deq/wq/Pages/WQ-Assessment.aspx), [USEPA](https://www.epa.gov/tmdl/program-overview-303d-listing-impaired-waters)
 
-```{r wq_limited, echo = FALSE, message = FALSE, warning=FALSE, error=TRUE}
+```{r wq_limited}
 require(dplyr)
 require(tidyr)
 require(rgdal)
@@ -236,11 +244,11 @@ wqlim4.df <- wqlim3.df %>%
 
 names(wqlim4.df) <- c("Pollutant", "Segments without a TMDL", "Segments with a TMDL") 
 
-knitr::kable(wqlim4.df, format = "markdown", padding = 2, caption = "Summary of polluted stream segments identifed in Oregon's 2012 Integrated Report and Assessment database. Table based on the approved (and partially disapproved) 2012 Integrated Report Listings by the EPA")
+knitr::kable(wqlim4.df, padding = 2, caption = tbls(name="tbl2", caption="Summary of polluted stream segments identifed in Oregon's 2012 Integrated Report and Assessment database. Table based on the approved (and partially disapproved) 2012 Integrated Report Listings by the EPA."))
 
 ```
 
-##TMDL Watershed Plans
+## TMDL Watershed Plans
 
 The federal Clean Water Act requires that water pollutant reduction plans, called TMDLs, be developed for water bodies that are listed in Category 5 of the Integrated Report (303(d) List). TMDLs describe the maximum amount of pollutants that can enter the river or stream and still meet water quality standards.
 
@@ -252,42 +260,52 @@ The Water Quality Management Plan is the framework for TMDL implementation that 
 * [North Coast Subbasins TMDL](http://www.oregon.gov/deq/FilterDocs/NCStmdl.pdf)
 * [Nestucca Bay Watershed TMDL](http://www.oregon.gov/deq/FilterDocs/NCnesttmdlwqmp.pdf)
 
-#- Implementation Highlights
+# Implementation Highlights
 
-## Section 319 Grants
-The federal Clean Water Act grants states, territories and tribes grants for technical assistance, education, training, technology transfer, demonstration projects and monitoring to assess the success of specific nonpoint source implementation projects. Learn more at https://www.epa.gov/lakes/clean-water-act-section-319.
-
-Since 2014 more than $570,000 in 319 funding has been spent in the North Coast Basin. To achieve measurable results, DEQ has placed a strong emphasis on projects that are designed, implemented and monitored to demonstrate benefits to the watershed. Quantification of instream water quality improvements, estimations of pollutant load reductions associated with innovative demonstration projects, or documenting changes in behavior from educational efforts that lead to water quality protection are all ways to achieve measurable success.
-
-```{r 319 projects, echo = FALSE, message = FALSE, warning=FALSE, error=TRUE}
+```{r 319_projects setup}
 require(readxl)
 
 program <- "319"
 
 projects.df <- read_excel(path="Info_Integrated.xlsx", sheet="2_Projects", na = c("","N/A", " "))
-deq319.df <- projects.df[projects.df$owrd_basin %in% owrd_basin & projects.df$fund_program == program, c("project_name","grantee", "objectives", "outputs")]
+deq319.df <- projects.df[projects.df$owrd_basin %in% owrd_basin & projects.df$fund_program == program, 
+                         c("project_name","grantee", "objectives", "outputs")]
+
 colnames(deq319.df) <- c("Project Name", "Grantee", "Project Description", "Reported Outputs")
+```
 
-knitr::kable(deq319.df, format = "markdown", padding = 2, digits = 1, caption = "Section 319 Grant funded projects and outputs for 2017.")
+`r if(nrow(deq319.df) > 0){"## Section 319 Grants\n\n
+The federal Clean Water Act grants states, territories and tribes grants for technical assistance, education, training, technology transfer, demonstration projects and monitoring to assess the success of specific nonpoint source implementation projects. Learn more at https://www.epa.gov/lakes/clean-water-act-section-319.\n\n
 
-pix.df <- projects.df[projects.df$owrd_basin %in% owrd_basin & 
-                      projects.df$fund_program == program & 
-                      projects.df$picture == "Yes", c("picture", "picture_caption","picture_file")]
+Since 2014 more than $570,000 in 319 funding has been spent in the North Coast Basin. To achieve measurable results, DEQ has placed a strong emphasis on projects that are designed, implemented and monitored to demonstrate benefits to the watershed. Quantification of instream water quality improvements, estimations of pollutant load reductions associated with innovative demonstration projects, or documenting changes in behavior from educational efforts that lead to water quality protection are all ways to achieve measurable success."}`
+
+```{r 319_tbl}
+
+if(nrow(deq319.df) > 0){
+  print(knitr::kable(deq319.df, padding = 2, digits = 1, 
+               caption = tbls(name="tbl.319_projects", 
+                              caption="Section 319 grant funded projects and outputs for 2017.")))
+  
+  pix.df <- projects.df[projects.df$owrd_basin %in% owrd_basin & projects.df$fund_program == program & 
+                          projects.df$picture == "Yes", c("picture", "picture_caption","picture_file")]
+  
+  if(nrow(pix.df) > 0){
+    set.seed(99)
+    pix.seed.df <- pix.df[sample(nrow(pix.df), size=1, replace = TRUE), c("picture_caption", "picture_file")]
+    }
+  
+}
+```
+
+```{r 319_picture, fig.cap=figs(name="319.fig",caption=pix.seed.df$picture_caption)}
 
 if(nrow(pix.df) > 0){
-  
-  set.seed(42)
-  pix.df <- pix.df[sample(nrow(pix.df), 1), c("picture_caption", "picture_file")]
-  include_graphics(paste0("pictures/",pix.df$picture_file))
-  pix.df$picture_caption
+  knitr::include_graphics(path=paste0("pictures/",pix.seed.df$picture_file))
 }
 
 ```
 
-## Clean Water State Revolving Fund (cWSRF)
-The Clean Water State Revolving Fund loan program provides low-cost loans to public agencies for the planning, design or construction of various projects that prevent or mitigate water pollution. Eligible agencies include federally recognized Indian tribal governments, cities, counties, sanitary districts, soil and water conservation districts, irrigation districts, various special districts and intergovernmental entities. DEQ partners with Oregon communities to implement projects that attain and maintain water quality standards, and are necessary to protect beneficial uses. 
-
-```{r sRF projects, echo = FALSE, message = FALSE, warning=FALSE, error=TRUE}
+```{r CWsRF_projects setup}
 
 program <- "CWSRF"
 
@@ -295,84 +313,121 @@ projects.df <- read_excel(path="Info_Integrated.xlsx", sheet="2_Projects", na = 
 deqCWSRF.df <- projects.df[projects.df$owrd_basin %in% owrd_basin & projects.df$fund_program == program , c("project_name","grantee", "objectives", "outputs")]
 
 colnames(deqCWSRF.df) <- c("Project Name", "Grantee", "Project Description", "Reported Outputs")
+```
 
-knitr::kable(deqCWSRF.df, format = "markdown", padding = 2, digits = 1, caption = "Clean Water State Revolving Fund Projects and outputs for 2017.")
+`r if(nrow(deqCWSRF.df) > 0){"## Clean Water State Revolving Fund (cWSRF)\n\n
+The Clean Water State Revolving Fund loan program provides low-cost loans to public agencies for the planning, design or construction of various projects that prevent or mitigate water pollution. Eligible agencies include federally recognized Indian tribal governments, cities, counties, sanitary districts, soil and water conservation districts, irrigation districts, various special districts and intergovernmental entities. DEQ partners with Oregon communities to implement projects that attain and maintain water quality standards, and are necessary to protect beneficial uses."}`
 
-pix.df <- projects.df[projects.df$owrd_basin %in% owrd_basin & 
+```{r CWsRF_projects tbl}
+
+pix.df <- pix.df[NULL,]
+
+if(nrow(deqCWSRF.df) > 0){
+  print(knitr::kable(deqCWSRF.df, padding = 2, digits = 1, 
+               caption=tbls(name="tbl.dwsrf_projects", caption="Clean Water State Revolving Fund projects and outputs for 2017.")))
+  
+  pix.df <- projects.df[projects.df$owrd_basin %in% owrd_basin & 
                       projects.df$fund_program == program & 
                       projects.df$picture == "Yes", c("picture", "picture_caption","picture_file")]
-
-if(nrow(pix.df) > 0){
   
-  set.seed(42)
-  pix.df <- pix.df[sample(nrow(pix.df), 1), c("picture_caption", "picture_file")]
-  include_graphics(paste0("pictures/",pix.df$picture_file))
-  pix.df$picture_caption
+  if(nrow(pix.df) > 0){
+    set.seed(99)
+    pix.seed.df <- pix.df[sample(nrow(pix.df), size=1, replace = TRUE), c("picture_caption", "picture_file")]
+    }
+}
+```
+
+```{r, CWSRF_picture, fig.cap=figs(name="CWSRF.fig",caption=pix.seed.df$picture_caption)}
+if(nrow(pix.df) > 0){
+  knitr::include_graphics(path=paste0("pictures/",pix.seed.df$picture_file))
 }
 
 ```
 
-## Source Water Protection Grants
-The Oregon Health Authority administers the Drinking Water Revolving Loan Fund. OHA, which regulates drinking water under state law and the Safe Drinking Water Act, works cooperatively with DEQ on source water protection efforts. Money from the loan fund is used to fund: Source Water Protection Grants (up to $30,000) to fund source water protection activities, monitoring, and planning in Drinking Water Source Areas and loans for improving drinking water treatment, source water protection activities, or land acquisition in source areas. Oregon's Infrastructure Finance Authority is responsible for administering these projects. The loan fund set-asides also fund five Drinking Water Protection positions at DEQ. These positions delineate source areas, integrate Clean Water Act programs (including the Nonpoint Source Program) with source water protection needs, provide technical assistance to public water systems, and research nonpoint source pollution's impacts on surface and ground drinking water sources.  
-
-```{r Drinking Water projects, echo = FALSE, message = FALSE, warning=FALSE, error=TRUE}
+```{r DWSRF Setup}
 
 program <- "DWSRF"
+
+pix.df <- pix.df[NULL,]
 
 projects.df <- read_excel(path="Info_Integrated.xlsx", sheet="2_Projects", na = c("","N/A", " "))
 deqDWSRF.df <- projects.df[projects.df$owrd_basin %in% owrd_basin & projects.df$fund_program == program, c("project_name","grantee", "objectives", "outputs")]
 
 colnames(deqDWSRF.df) <- c("Project Name", "Grantee", "Project Description", "Reported Outputs")
+```
 
-knitr::kable(deqDWSRF.df, format = "markdown", padding = 2, digits = 1, caption = "Clean Drinking Water State Revolving Fund Projects")
+`r if(nrow(deqDWSRF.df) > 0){"## Source Water Protection Grants\n\n
+The Oregon Health Authority administers the Drinking Water Revolving Loan Fund. OHA, which regulates drinking water under state law and the Safe Drinking Water Act, works cooperatively with DEQ on source water protection efforts. Money from the loan fund is used to fund: Source Water Protection Grants (up to $30,000) to fund source water protection activities, monitoring, and planning in Drinking Water Source Areas and loans for improving drinking water treatment, source water protection activities, or land acquisition in source areas. Oregon's Infrastructure Finance Authority is responsible for administering these projects. The loan fund set-asides also fund five Drinking Water Protection positions at DEQ. These positions delineate source areas, integrate Clean Water Act programs (including the Nonpoint Source Program) with source water protection needs, provide technical assistance to public water systems, and research nonpoint source pollution's impacts on surface and ground drinking water sources. "}`
 
-pix.df <- projects.df[projects.df$owrd_basin %in% owrd_basin & 
+```{r DWSRF tbl}
+
+if(nrow(deqDWSRF.df) > 0){
+  print(knitr::kable(deqDWSRF.df, padding = 2, digits = 1, 
+               caption = tbls(name="tbl.dwsrf_projects", caption="Clean Drinking Water State Revolving Fund projects and outputs for 2017.")))
+  
+  pix.df <- projects.df[projects.df$owrd_basin %in% owrd_basin & 
                       projects.df$fund_program == program & 
                       projects.df$picture == "Yes", c("picture", "picture_caption","picture_file")]
-
-if(nrow(pix.df) > 0){
   
-  set.seed(42)
-  pix.df <- pix.df[sample(nrow(pix.df), 1), c("picture_caption", "picture_file")]
-  include_graphics(paste0("pictures/",pix.df$picture_file))
-  pix.df$picture_caption
+  if(nrow(pix.df) > 0){
+    set.seed(99)
+    pix.seed.df <- pix.df[sample(nrow(pix.df), size=1, replace = TRUE), c("picture_caption", "picture_file")]
+  }
 }
 
 ```
 
-## Drinking Water Provider Partnership Grants
+```{r, DWSRF_picture, fig.cap=figs(name="DWSRF.fig",caption=pix.seed.df$picture_caption)}
 
-The Drinking Water Providers Partnership (DWPP) is a collaboration of the Geos Institute, USDA Forest Service Region 6, Oregon Department of Environmental Quality, the Washington Department of Health, U.S. Environmental Protection Agency Region 10, the U.S. Bureau of Land Management OR/WA Office, and WildEarth Guardians.  Together, the partners coordinates an annual, competitive grant solicitation and award program for environmental conservation and restoration projects in municipal watersheds across the Northwest. The Partners share a common vision that watershed restoration is an important and effective way to provide clean, inexpensive drinking water to communities and protect native fish populations, particularly when downstream and upstream users work together. Goals of the partnership are to:
-* Restore and protect the health of watersheds which communities depend upon for drinking water while also benefiting aquatic and riparian ecosystems, including the native fish that inhabit them.
-* Support local partnerships between drinking water providers, landowners, and restoration practitioners.
+if(nrow(pix.df) > 0){
+  knitr::include_graphics(path=paste0("pictures/",pix.seed.df$picture_file))
+}
+```
 
-```{r DWPP projects, echo = FALSE, message = FALSE, warning=FALSE, error=TRUE}
+```{r DWPP_projects setup}
 
 program <- "DWPP"
+
+pix.df <- pix.df[NULL,]
 
 projects.df <- read_excel(path="Info_Integrated.xlsx", sheet="2_Projects", na = c("","N/A", " "))
 deqDWPP.df <- projects.df[projects.df$owrd_basin %in% owrd_basin & projects.df$fund_program == program, c("project_name","grantee", "objectives", "outputs")]
 
 colnames(deqDWPP.df) <- c("Project Name", "Grantee", "Project Description", "Reported Outputs")
+```
 
-knitr::kable(deqDWPP.df, format = "markdown", padding = 2, digits = 1, caption = "Clean Drinking Water State Revolving Fund Projects")
+`r if(nrow(deqDWPP.df ) > 0){"## Drinking Water Provider Partnership Grants\n\n
+The Drinking Water Providers Partnership (DWPP) is a collaboration of the Geos Institute, USDA Forest Service Region 6, Oregon Department of Environmental Quality, the Washington Department of Health, U.S. Environmental Protection Agency Region 10, the U.S. Bureau of Land Management OR/WA Office, and WildEarth Guardians.  Together, the partners coordinates an annual, competitive grant solicitation and award program for environmental conservation and restoration projects in municipal watersheds across the Northwest. The Partners share a common vision that watershed restoration is an important and effective way to provide clean, inexpensive drinking water to communities and protect native fish populations, particularly when downstream and upstream users work together. Goals of the partnership are to:\n\n
+* Restore and protect the health of watersheds which communities depend upon for drinking water while also benefiting aquatic and riparian ecosystems, including the native fish that inhabit them.\n
+* Support local partnerships between drinking water providers, landowners, and restoration practitioners."}`
 
-pix.df <- projects.df[projects.df$owrd_basin %in% owrd_basin & 
+```{r DWPP_tbl}
+if(nrow(deqDWPP.df ) > 0){
+  print(knitr::kable(deqDWPP.df,  padding = 2, digits = 1, 
+               caption=tbls(name="tbl.dwpp_projects", 
+                            caption = "Clean Drinking Water State Revolving Fund projects and outputs for 2017")))
+  
+  pix.df <- projects.df[projects.df$owrd_basin %in% owrd_basin & 
                       projects.df$fund_program == program & 
                       projects.df$picture == "Yes", c("picture", "picture_caption","picture_file")]
-
-if(nrow(pix.df) > 0){
   
-  set.seed(42)
-  pix.df <- pix.df[sample(nrow(pix.df), 1), c("picture_caption", "picture_file")]
-  include_graphics(paste0("pictures/",pix.df$picture_file))
-  pix.df$picture_caption
+  if(nrow(pix.df) > 0){
+    set.seed(99)
+    pix.seed.df <- pix.df[sample(nrow(pix.df), size=1, replace = TRUE), c("picture_caption", "picture_file")]
+  }
 }
 
 ```
 
+```{r DWPP_picture, fig.cap=figs(name="DWPP.fig",caption=pix.seed.df$picture_caption)}
 
-```{r OWEB projects processing, echo = FALSE, message = FALSE, warning=FALSE, error=TRUE}
+if(nrow(pix.df) > 0){
+  knitr::include_graphics(path=paste0("pictures/",pix.seed.df$picture_file))
+}
+
+```
+
+```{r OWEB projects processing}
 
 #get.OWRI.huc8.names(owri.mdb=owri.db, complete.years=my.year)
 
@@ -394,18 +449,25 @@ OWEB offers a variety of grant types and programs: http://www.oregon.gov/OWEB/GR
 The OWEB mission of helping to protect and restore healthy watersheds and natural habitats that support thriving communities and strong economies implicitly recognizes that specific goals for improvement will vary between watersheds. OWEB grants fund a variety of activities that local partners have identified as priorities in watershed assessments, action plans, or regional plans such as ESA Recovery Plans, Groundwater Management Areas, or TMDLs. Restoration actions address watershed process and functions necessary to support natural processes that are indicative of healthy watersheds. This includes, but is not limited to improving water quality, water quantity, habitat complexity, flood plain interaction, vegetation structure, and species diversity.
 
 
-```{r OWEB project table, echo = FALSE, message = FALSE, warning=FALSE, error=TRUE, fig.cap="\\label{fig:figs}Cash and inkind dollars spent in each subbasin for different project types completed in 2016, the most recent year data is availiable in OWEB's OWRI database."}
+```{r OWEB_costs, fig.cap=figs(name="figs.oweb_costs", caption= "Cash and inkind dollars spent in each subbasin for different project types completed in 2016, the most recent year data is availiable in OWEB's OWRI database.")}
 
 include_graphics("pictures/owri_costs_plot_NorthCoast.png")
 
-knitr::kable(oweb.projects.df, format = "markdown", padding = 2, digits = 1, row.names=FALSE, caption = "OWEB grant funded projects compleated in 2016, the most recent year data is availiable in OWEB's OWRI database.")
+```
+
+```{r OWEB_projects tbl}
+if(nrow(oweb.projects.df) > 0){
+  knitr::kable(oweb.projects.df, padding = 2, digits = 1, row.names=FALSE, 
+               caption = tbls(name="tbl.oweb_projects", 
+                              caption="OWEB grant funded projects compleated in 2016, the most recent year data is availiable in OWEB's OWRI database."))
+}
 ```
 
 ## TMDL Implementation Highlights
 
 The followng are 2017 cycle actions related to TMDL implementation from Designated Management Agencies (DMAs) or Third parties. 
 
-```{r Implementation projects, echo = FALSE, message = FALSE, warning=FALSE, error=TRUE}
+```{r dma_projects}
 
 require(readxl)
 tmdl.imp.df <- read_excel(path="Info_Integrated.xlsx", sheet="5_TMDL_Implementation", na = c("","N/A", " "))
@@ -413,7 +475,7 @@ tmdl.imp.df <- tmdl.imp.df[tmdl.imp.df$owrd_basin %in% owrd_basin, c("TMDL", "DM
 
 colnames(tmdl.imp.df) <- c("TMDL", "DMA or Third Party", "Reported Actions")
 
-knitr::kable(tmdl.imp.df, format = "markdown", padding = 2, digits = 1, row.names=FALSE, caption = "TMDL implementaiton activities in 2017 by Designated Managmetn Agencies or third parties.")
+knitr::kable(tmdl.imp.df, padding = 2, digits = 1, row.names=FALSE, caption = tbls(name="tbl.dma_projects", caption="TMDL implementaiton activities in 2017 by Designated Managment Agencies or third parties."))
 
 ```
 
@@ -430,28 +492,28 @@ As Nestucca Bay Watershed TMDL implementation continues, DEQ will focus on resto
 ### North Coast Subbasins TMDL
 As the North Coast Subbasins TMDL implementation continues, DEQ will focus on restoration projects and implementation monitoring efforts. Restoration projects include riparian restoration and to a less extent associated livestock exclusion fencing projects, as well as continued landowner outreach. These projects have been supported by 319 funds in the past and will continue to be a priority.   Streamside wetland restoration projects are another area of focus to improve water quality in the North Coast area.   DEQ relied on Tillamook Esturary Partnership to maintain the Volunteer Water Quality Monitoring Program for TMDL Implementation Effectiveness Monitoring.  DEQ should assist TEP with maintenance of this monitoring effort through technical assistance and monitoring supplies through DEQ's Volunteer Monitoring Program. DEQ will also continue to implement its Long-term Temperature Monitoring effort in the watershed and should focus resources on data management and analysis of temperature data for the area. DEQ should also continue to support the NCWA and the Columbia SWCD in their effort to collect temperature data.
 
-#- Water Quality Status and Trends
+# Water Quality Status and Trends
 
 Summary of water quality status and trends with links to existings reports for more information.
 
-```{r status and trend 1, echo = FALSE, message = FALSE, warning=FALSE, error=TRUE}
-knitr::kable(wqst.list[1], format = "markdown", padding = 2, digits = 1, caption = paste0("Summary of water quality status and trend for stations in the ",huc8.df$HU_8_NAME[1]," Subbasin."))
+```{r status and trend 1}
+knitr::kable(wqst.list[1], padding = 2, digits = 1, caption = tbls(name="tbl.wqst1", caption=paste0("Summary of water quality status and trend for stations in the ",huc8.df$HU_8_NAME[1]," Subbasin.")))
 ```
 <!-- -->
-```{r status and trend 2, echo = FALSE, message = FALSE, warning=FALSE, error=TRUE}
-knitr::kable(wqst.list[2], format = "markdown", padding = 2, digits = 1, caption = paste0("Summary of water quality status and trend for stations in the ",huc8.df$HU_8_NAME[2]," Subbasin."))
+```{r status and trend 2}
+knitr::kable(wqst.list[2], padding = 2, digits = 1, caption = tbls(name="tbl.wqst2", paste0("Summary of water quality status and trend for stations in the ",huc8.df$HU_8_NAME[2]," Subbasin.")))
 ```
 <!-- -->
-```{r status and trend 3, echo = FALSE, message = FALSE, warning=FALSE, error=TRUE}
-knitr::kable(wqst.list[3], format = "markdown", padding = 2, digits = 1, caption = paste0("Summary of water quality status and trend for stations in the ",huc8.df$HU_8_NAME[3]," Subbasin."))
+```{r status and trend 3}
+knitr::kable(wqst.list[3], padding = 2, digits = 1, caption = tbls(name="tbl.wqst3", paste0("Summary of water quality status and trend for stations in the ",huc8.df$HU_8_NAME[3]," Subbasin.")))
 ```
 <!-- -->
-```{r status and trend 4, echo = FALSE, message = FALSE, warning=FALSE, error=TRUE}
-knitr::kable(wqst.list[4], format = "markdown", padding = 2, digits = 1, caption = paste0("Summary of water quality status and trend for stations in the ",huc8.df$HU_8_NAME[4]," Subbasin."))
+```{r status and trend 4}
+knitr::kable(wqst.list[4], padding = 2, digits = 1, caption = tbls(name="tbl.wqst4", paste0("Summary of water quality status and trend for stations in the ",huc8.df$HU_8_NAME[4]," Subbasin.")))
 ```
 <!-- -->
-```{r status and trend 5, echo = FALSE, message = FALSE, warning=FALSE, error=TRUE}
-knitr::kable(wqst.list[5], format = "markdown", padding = 2, digits = 1, caption = paste0("Summary of water quality status and trend for stations in the ",huc8.df$HU_8_NAME[5]," Subbasin."))
+```{r status and trend 5}
+knitr::kable(wqst.list[5], padding = 2, digits = 1, caption = tbls(name="tbl.wqst5", paste0("Summary of water quality status and trend for stations in the ",huc8.df$HU_8_NAME[5]," Subbasin.")))
 
 ```
 
