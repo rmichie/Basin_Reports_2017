@@ -260,31 +260,31 @@ get.OWRI.projects <- function(owri.mdb, huc8.names, complete.years, cost.plot) {
   
   # --- Add cost info for plot ----
   owri.df5p <- merge(x=owri.df4p, y=ActivityCost[,c("PROJNUM","ActivityTypeLUID","Cash","InKind")], by=c("PROJNUM","ActivityTypeLUID"), all.x=TRUE)
-  
+
   # combine participants, ActivityType, Results, and Cash/InKind
   owri.df6p <- owri.df5p %>%
     dplyr::select(PROJNUM, ProjName, SubbasinActual, ActivityType, drvdProjDesc, Cash, InKind, Participants, Result) %>%
     group_by(PROJNUM, ProjName, SubbasinActual, drvdProjDesc, Participants) %>%
-    summarise(ActivityTypes = paste(unique(ActivityType), collapse = ", "), 
-              TotalCash = sum(Cash), 
+    summarise(ActivityTypes = paste(unique(ActivityType), collapse = ", "),
+              TotalCash = sum(Cash),
               TotalInKind = sum(InKind),
               Total = sum(TotalCash, TotalInKind),
               Results = paste(unique(Result), collapse = ", ")) %>%
     as.data.frame() %>%
     dplyr::select(ProjName, SubbasinActual, ActivityTypes, drvdProjDesc, Participants, Total, TotalCash, TotalInKind, Results)
-  
+
   # aggregate cost by activity
   owri.df7p <- owri.df5p %>%
     dplyr::select(SubbasinActual, ActivityType, Cash, InKind) %>%
     group_by(SubbasinActual, ActivityType) %>%
-    summarise(TotalCash = sum(Cash), 
+    summarise(TotalCash = sum(Cash),
               TotalInKind = sum(InKind),
               Total = sum(TotalCash, TotalInKind))
-  
+
   # put a return char into labels
   owri.df7p$ActivityType <- factor(owri.df7p$ActivityType)
   levels(owri.df7p$ActivityType) <- gsub(" ", "\n", levels(owri.df7p$ActivityType))
-  
+
   # bar plot
   p1 <- ggplot(data=owri.df7p, aes(x=ActivityType, y=Total)) +
     geom_bar(stat="identity", width = .95) +
@@ -296,7 +296,7 @@ get.OWRI.projects <- function(owri.mdb, huc8.names, complete.years, cost.plot) {
           axis.ticks.y=element_blank(),
           axis.text.x=element_text(size=6)) +
     facet_wrap(~SubbasinActual, ncol=3 )
-  
+
   # Save the plot
   ggsave(file=cost.plot,
          plot=p1,
@@ -308,13 +308,120 @@ get.OWRI.projects <- function(owri.mdb, huc8.names, complete.years, cost.plot) {
   
 }
 
+get.OWRI.projects2 <- function(owri.mdb, huc8.names, complete.years) {
+  # Retreives and formats OWRI project data and returns a data frame with 
+  # Suubasin, Project Name, Activity Type, Project Description, All participants, all reported results.
+  
+  # owri.mdb <- the path and name of the OWRI database in mdb format
+  # huc8.names <- vector of huc8 names to query projects
+  # complete.years <- vector of years to query cooresponding to the project completion year
+  
+  # Ryan Michie
+  
+  # --- Load required packages  -----------------
+  library(RODBC)
+  require(dplyr)
+  require(tidyr)
+  require(ggplot2)
+  require(scales)
+  
+  options(stringsAsFactors = FALSE)
+  
+  # --- Read OWRI data from access database -----------------
+  
+  # I'm keeping the dataframes the same name that OWEB uses
+  channel <-odbcConnectAccess2007(owri.mdb)
+  ActivityCost <- sqlFetch(channel, "ActivityCost")
+  Codes <- sqlFetch(channel,"ActivityTypeLUXActivityLUXTreatmentLU")
+  Participant <- sqlFetch(channel, "Participant")
+  ProjectInfo <- sqlFetch(channel, "ProjectInfo")
+  Result <- sqlFetch(channel, "Result")
+  ResultLU <- sqlFetch(channel, "ResultLU")
+  close(channel)
+  
+  # --- Get project info -----------------
+  
+  owri.df <- ProjectInfo %>% 
+    filter(CompleteYear %in% complete.years & SubbasinActual %in% huc8.names) %>%
+    dplyr::select(PROJNUM, ProjName, drvdProjDesc, SubbasinActual)
+  
+  # build results table
+  result.df <- merge(x=Result[,c("PROJNUM","ActivityTypeLUID","Quantity","ResultLUID")], y=ResultLU[,c("ResultLUID", "Result")], by="ResultLUID", all.x=TRUE)
+  
+  # limit results table to projects in basin area
+  result.df <- result.df[result.df$PROJNUM %in% unique(owri.df$PROJNUM),]
+  
+  # Add results to each project. There are many results for a single project.
+  owri.df <- merge(x=owri.df, y=result.df, by='PROJNUM', all.y=TRUE)
+  
+  # This keeps the numerics from having endless precision when converting to character.
+  owri.df$Quantity <- round(owri.df$Quantity,2)
+  
+  owri.df2 <- owri.df %>%
+    unite(col="result2",c("Quantity","Result"), sep = " ", remove=FALSE) %>% 
+    dplyr::select(Result=result2, PROJNUM, ProjName, SubbasinActual, ActivityTypeLUID, drvdProjDesc) %>%
+    group_by(PROJNUM, ProjName, SubbasinActual, drvdProjDesc, ActivityTypeLUID) %>%
+    summarise(Result = paste(Result, collapse = ", "))
+  
+  # fix result text
+  owri.df2$Result <- gsub(owri.df2$Result, pattern="Total ", replacement="")
+  owri.df2$Result <- gsub(owri.df2$Result, pattern="number of ", replacement="")
+  owri.df2$Result <- tolower(owri.df2$Result)
+  
+  # Add in Activity Type
+  owri.df2 <- merge(owri.df2, y=unique(Codes[,c("ActivityTypeLUID", "ActivityType")]), by="ActivityTypeLUID", all.x=TRUE)
+  
+  # --- Bring in participants  -----------------
+  
+  # Fix participant records
+  Participant$Participant[Participant$Participant == "OWEB "] <- "OWEB"
+  Participant$Participant[Participant$Participant == "USFWS "] <- "USFWS"
+  Participant$Participant[Participant$Participant == "Metro "] <- "Metro"
+  Participant$Participant[Participant$Participant == "Private Landowner"] <- "Private Landowners"
+  Participant$Participant[Participant$Participant == "Private Landowner (neighbor/contributor)"] <- "Private Landowners"
+  Participant$Participant[Participant$Participant == "Private Landowners (multiple)"] <- "Private Landowners"
+  Participant$Participant[Participant$Participant == "volunteers"] <- "Volunteers"
+  Participant$Participant[Participant$Participant == "volunteers: Calapooia Watershed volunteers"] <- "Volunteers"
+  Participant$Participant[Participant$Participant == "volunteers: community"] <- "Volunteers"
+  Participant$Participant[Participant$Participant == "volunteers: students and community"] <- "Volunteers"
+  Participant$Participant[Participant$Participant == "Private Citizen"] <- "Volunteers"
+  Participant$Participant[Participant$Participant == "Northwest Youth Corps "] <- "Northwest Youth Corps"
+  Participant$Participant[Participant$Participant == "Oregon State University Environmental Conservation  (Geo 300) Class"] <- "Oregon State University"
+  Participant$Participant[Participant$Participant == "Oregon State University Geo 300 class"] <- "Oregon State University"
+  Participant$Participant[Participant$Participant == "Springfield Public Schools "] <- "Springfield Public Schools"
+  Participant$Participant[Participant$Participant == "volunteers: Santiam Wilderness Academy"] <- "Santiam Wilderness Academy"
+  
+  # limit to just projects in basin area
+  partic.df <- Participant[Participant$PROJNUM %in% unique(owri.df$PROJNUM),]
+  
+  #owri.df3 <- merge(x=owri.dfxx, y=partic.df[,c("PROJNUM", "Participant")], by='PROJNUM', all.y=TRUE)
+  owri.df3 <- merge(x=owri.df2, y=partic.df[,c("PROJNUM", "Participant")], by='PROJNUM', all.y=TRUE)
+  
+  owri.df4 <- owri.df3 %>%
+    dplyr::select(SubbasinActual, PROJNUM, ProjName, ActivityType, drvdProjDesc, Participant, Result) %>%
+    group_by(SubbasinActual, PROJNUM, ProjName, drvdProjDesc, ActivityType, Result) %>%
+    summarise(Participants = paste(sort(unique(Participant)), collapse = ", ")) %>%
+    as.data.frame() %>%
+    dplyr::select(SubbasinActual, ProjName, ActivityType, drvdProjDesc, Participants, Result)
+  
+  owri.df4p <- owri.df3 %>%
+    dplyr::select(PROJNUM, ProjName, SubbasinActual, ActivityTypeLUID, ActivityType, drvdProjDesc, Participant, Result) %>%
+    group_by(PROJNUM, ProjName, SubbasinActual, drvdProjDesc, ActivityTypeLUID, ActivityType, Result) %>%
+    summarise(Participants = paste(sort(unique(Participant)), collapse = ", ")) %>%
+    as.data.frame() %>%
+    dplyr::select(PROJNUM, ProjName, SubbasinActual, ActivityTypeLUID, ActivityType, drvdProjDesc, Participants, Result)
+  
+  return(owri.df4)
+  
+}
+
 get.wqst.summary <- function(huc8.list, df.dir) {
   
   huc8.list <- huc8.df$HUC_8
   df.dir <- wqst.dir
   
   wqst.list <- list()
-  
+
   for (huc8 in huc8.list) {
     
     file.path <- list.files(path=df.dir, pattern = huc8 , full.names = TRUE, recursive = FALSE)
