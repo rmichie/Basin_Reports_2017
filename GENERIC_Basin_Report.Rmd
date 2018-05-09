@@ -1,21 +1,25 @@
 ---
-title: "Appendix M"
-subtitle: "Rogue Basin Report"
-author: "Ryan Michie"
-date: "April 18th, 2018"
+params:
+ owrd_basin: Hood
+ a.letter: XX
+ report_title: 2017 Nonpoint Source Annual Report
+ report_subtitle: XX Basin Report
+ report_format: word_document
+title: "`r params$report_title`"
+subtitle: "`r params$report_subtitle`"
 output:
-  word_document:
-    reference_docx: \\deqhq1\WQNPS\NPS_Annual_Reports\2017\Basin_Reports_2017\word_basin_report_template_style.docx
-    toc: false
-    fig_caption: true
   html_document:
-    css: Y:\NPS_Annual_Reports\2017\Basin_Reports_2017\DEQTemplate_html.css
+    css: Y:\NPS_Annual_Reports\2017\Basin_Reports_2017\html_basin_report_template_style.css
     fig_caption: true
     mode: selfcontained
     number_sections: true
     toc: true
     toc_depth: 4
     toc_float: true
+  word_document:
+    reference_docx: \\deqhq1\WQNPS\NPS_Annual_Reports\2017\Basin_Reports_2017\word_basin_report_template_style.docx
+    toc: false
+    fig_caption: true
   pdf_document:
     fig_caption: true
 always_allow_html: true
@@ -56,46 +60,7 @@ wqst.dir <- "//deqhq1/WQNPS/NPS_Annual_Reports/2017/R_NPS_WQStatusAndTrend/R_Out
 owri.db <- "//deqhq1/WQNPS/NPS_Annual_Reports/2017/OWRI_1995_2016/OwriDbExport_010918.mdb"
 lu_dir <- "lookup_tables"
 
-##owrd_basin <- "Deschutes"
-##owrd_basin <- "Goose & Summer Lakes"
-##owrd_basin <- "Grande Ronde"
-#3owrd_basin <- "Hood"
-##owrd_basin <- "John Day"
-##owrd_basin <- "Klamath"
-##owrd_basin <- "Malheur"
-##owrd_basin <- "Malheur Lakes"
-##owrd_basin <- "Mid Coast"
-##owrd_basin <- "North Coast"  # See other script
-##owrd_basin <- "Owyhee"
-##owrd_basin <- "Powder"
-owrd_basin <- "Rogue"
-##owrd_basin <- "Sandy"
-##owrd_basin <- "South Coast"
-##owrd_basin <- "Umatilla"
-##owrd_basin <- "Umpqua"
-##owrd_basin <- "Willamette"
-
-# List of the Appendix letter prefix for each basin
-appendix_prefix <- list("Deschutes"="A",
-                        "Goose & Summer Lakes"="B",
-                        "Grande Ronde"="c",
-                        "Hood"="D",
-                        "John Day"="E",
-                        "Klamath"="F",
-                        "Malheur"="G",
-                        "Malheur Lakes"="H",
-                        "Mid Coast"="I",
-                        "North Coast"="J",
-                        "Owyhee"="K",
-                        "Powder"="L",
-                        "Rogue"="M",
-                        "South Coast"="N",
-                        "Umatilla"="O",
-                        "Umpqua"="P",
-                        "Willamette"="Q")
-
-# Set the correct Appendix letter prefix
-a.prefix <- appendix_prefix[[owrd_basin]]
+owrd_basin <- params$owrd_basin
 
 #set.seed(42)
 set.seed(99) # Willamette
@@ -117,8 +82,8 @@ huc8.name <- unique(huc8.df$HU_8_NAME)
 pix.df <- data.frame(picture=character(0),picture_caption=character(0),picture_file=character(0))
 pix.seed.df <- data.frame(picture_caption=c(NA),picture_file=c(NA))
 
-tbls  <- captioner(prefix=paste0("Table ",a.prefix,"-"), auto_space = FALSE)
-figs <- captioner(prefix=paste0("Figure ",a.prefix,"-"), auto_space = FALSE)
+tbls  <- captioner(prefix=paste0("Table ",params$a.letter,"-"), auto_space = FALSE)
+figs <- captioner(prefix=paste0("Figure ",params$a.letter,"-"), auto_space = FALSE)
 
 ```
 
