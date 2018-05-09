@@ -5,3 +5,5 @@ pictures/**
 *.Rhistory
 *_Report.docx
 *.html
+*.Rdata
+*.RdataTmp
