@@ -1,11 +1,11 @@
 ---
-title: "Appendix G"
-subtitle: "Willamette Basin Report"
+title: "Appendix M"
+subtitle: "Rogue Basin Report"
 author: "Ryan Michie"
 date: "April 18th, 2018"
 output:
   word_document:
-    reference_docx: \\deqhq1\WQNPS\NPS_Annual_Reports\2017\Basin_Reports_2017\word_template_style_DEQ.docx
+    reference_docx: \\deqhq1\WQNPS\NPS_Annual_Reports\2017\Basin_Reports_2017\word_basin_report_template_style.docx
     toc: false
     fig_caption: true
   html_document:
@@ -29,8 +29,8 @@ always_allow_html: true
 
 ```{r global-setup, include=FALSE}
 
-require(knitr)
-require(kableExtra)
+library(knitr)
+library(kableExtra)
 knitr::opts_chunk$set(echo = FALSE,
                       message = FALSE,
                       warning=FALSE,
@@ -42,12 +42,12 @@ knitr::opts_chunk$set(echo = FALSE,
                       fig.align = "center",
                       eval = TRUE)
 
-require(rgdal)
-require(captioner)
-require(readxl)
-require(dplyr)
-require(tidyr)
-require(scales)
+library(rgdal)
+library(captioner)
+library(readxl)
+library(dplyr)
+library(tidyr)
+library(scales)
 
 setwd("//deqhq1/WQNPS/NPS_Annual_Reports/2017/Basin_Reports_2017/")
 
@@ -59,7 +59,7 @@ lu_dir <- "lookup_tables"
 ##owrd_basin <- "Deschutes"
 ##owrd_basin <- "Goose & Summer Lakes"
 ##owrd_basin <- "Grande Ronde"
-##owrd_basin <- "Hood"
+#3owrd_basin <- "Hood"
 ##owrd_basin <- "John Day"
 ##owrd_basin <- "Klamath"
 ##owrd_basin <- "Malheur"
@@ -68,12 +68,12 @@ lu_dir <- "lookup_tables"
 ##owrd_basin <- "North Coast"  # See other script
 ##owrd_basin <- "Owyhee"
 ##owrd_basin <- "Powder"
-##owrd_basin <- "Rogue"
+owrd_basin <- "Rogue"
 ##owrd_basin <- "Sandy"
 ##owrd_basin <- "South Coast"
 ##owrd_basin <- "Umatilla"
 ##owrd_basin <- "Umpqua"
-owrd_basin <- "Willamette"
+##owrd_basin <- "Willamette"
 
 # List of the Appendix letter prefix for each basin
 appendix_prefix <- list("Deschutes"="A",
@@ -124,7 +124,7 @@ figs <- captioner(prefix=paste0("Figure ",a.prefix,"-"), auto_space = FALSE)
 
 ```{r basemap-html}
 
-require(leaflet)
+library(leaflet)
 
 GetURL <- function(service, host = "basemap.nationalmap.gov") {
   sprintf("https://%s/arcgis/services/%s/MapServer/WmsServer", host, service)
@@ -618,7 +618,7 @@ if(nrow(pix.df) > 0){
 
 ```{r OWEB-setup}
 
-require(ggplot2)
+library(ggplot2)
 
 #get.OWRI.huc8.names(owri.mdb=owri.db, complete.years=my.year)
 
@@ -706,7 +706,7 @@ if(projects.n > 0){
 
 ```{r OWEB-projects-tbl, results="asis"}
 if(projects.n > 0){
-  print(knitr::kable(projects.df, padding = 2, digits = 1, row.names=FALSE, format="markdown", 
+  print(knitr::kable(projects.df, padding = 2, digits = 1, row.names=FALSE, 
                      caption = tbls(name="tbl.OWEB_projects", 
                                     caption="OWEB grant funded projects compleated in 2016, the most recent year data is available in the OWEB OWRI database.")))
 }
