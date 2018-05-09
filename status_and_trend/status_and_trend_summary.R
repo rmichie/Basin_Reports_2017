@@ -38,7 +38,7 @@ ph_crit <- merge(ph_crit, HUClist, by.x = 'plan_name', by.y = 'PlanName', all.x 
 lu_parms <- read.csv('//deqhq1/TMDL/AgWQM/DataAnalysis/StatusAndTrendsRMarkdown/app/WQP_Table3040_Names.csv', stringsAsFactors = FALSE)
 Ben_use_LU <- read.csv("E:/GitHub/StatusAndTrendsRMarkdown/Lookups/stations.csv", na.strings = c("", "NA"))
 
-#source the necessary functions
+# source the necessary functions
 source('E:/GitHub/StatusAndTrendsRMarkdown/functions/Rmarkdown_query.R')
 source('E:/GitHub/StatusAndTrendsRMarkdown/functions/01_DataQuery.R')
 source('E:/GitHub/StatusAndTrendsRMarkdown/functions/funHelpers.R')
@@ -46,7 +46,7 @@ source('E:/GitHub/StatusAndTrendsRMarkdown/functions/funClean.R')
 source('E:/GitHub/StatusAndTrendsRMarkdown/functions/funSeaKen.R')
 # source('NPS_tableFUN.R')
 
-setwd("//deqhq1/WQNPS/NPS_Annual_Reports/2017/R_NPS_WQStatusAndTrend/")
+setwd("//deqhq1/WQNPS/NPS_Annual_Reports/2017/Basin_Reports_2017/status_and_trend/")
 
 input$select <- as.character(unique(hucs$HUC_8))
 
@@ -98,70 +98,119 @@ for (f in 1:length(files)) {
   inputHUC <- strsplit(x = inputHUC, split = c("/"))[[1]][2]
   
   print(inputHUC)
+
+  #- Clean-df.all -------------------------------------------------------
   
-  df.all[df.all$Analyte == "Phosphorus", 'Analyte'] <- 'Total Phosphorus'
-  df.all[df.all$Analyte == "Phosphate, Total as P", 'Analyte'] <- 'Total Phosphorus'
-  df.all[df.all$Analyte == "Dissolved oxygen (DO)", 'Analyte'] <- 'Dissolved Oxygen'
-  df.all[df.all$Analyte == "Total suspended solids", 'Analyte'] <- 'Total Suspended Solids'
+  # remove data collected on tribal nation land or tribal trust land
+  #df.all <-df.all[df.all$Station_ID %in% Stations_in_poly(df.all, tribal_lands, outside=TRUE),]
   
-  df.all <- df.all[!is.na(df.all$Station_ID), ]
+  if(any(grepl('OREGONDEQ', df.all$Station_ID))) {
+    sub <- df.all[grepl('OREGONDEQ', df.all$Station_ID),]
+    sub$Station_ID <- gsub("[A-Z]", "", sub$Station_ID)
+    sub$Station_ID <- gsub("-", "", sub$Station_ID)
+    df.all <- rbind(sub, df.all)
+  } 
   
-  ##take out data from tribal land
-  df.all <- df.all %>% filter(!grepl('[Tt]ribe', Client)) %>% filter(!grepl('CTG', Station_ID))
+  #if there are duplicate lat and longs per station, use this function. 
+  df.all <- remove_stn_dups(df.all)
   
-  df.all <- df.all %>% filter(!grepl('OREGONDEQ', Station_ID)) #duplicates from WQ portal
+  ## Add snapped stations
+  #df.all <- Snapped_Stations(df.all)
   
   df.all$Result <- clean(df.all$Result)
-  df.all$Result <- as.numeric(df.all$Result)
+  df.all$Result <- suppressWarnings(as.numeric(df.all$Result))
   df.all <- MRLhandling(df.all)
+  
   if ("Fecal Coliform" %in% df.all$Analyte) {
     df.all <- update_fc2ec(df.all)
   }
-  
   
   if (any('Temperature' %in% df.all$Analyte)) {
     
     tempStns <- temp_sufficiency_analysis(df.all)
     
     qc.1.pass <- filter(attributes(tempStns)$day_test, result == "pass")
+    qc.2.pass <- filter(attributes(tempStns)$month_test, result == "pass")
+    qc.3.pass <- filter(attributes(tempStns)$year_test, result == "pass")
+    qc.1.stn <- filter(attributes(tempStns)$day_test, result == "pass")$Station_ID
+    qc.2.stn <- filter(attributes(tempStns)$month_test, result == "pass")$Station_ID
+    qc.3.stn <- filter(attributes(tempStns)$year_test, result == "pass")$Station_ID
     
-    df.all.sdadm <- df.all %>% mutate(date = date(Sampled)) %>% filter(Analyte == "Temperature") %>% merge(qc.1.pass[,c("Station_ID", "date", "result")], by=c("Station_ID", "date"), all=FALSE)
+    sdadm <- df.all %>% 
+      mutate(date = date(Sampled)) %>% 
+      filter(Analyte == "Temperature") %>% 
+      merge(qc.1.pass[,c("Station_ID", "date", "result")], by=c("Station_ID", "date"), all=FALSE) %>% 
+      Calculate.sdadm("Result", "Station_ID", "Sampled", '%Y-%m-%d %H:%M:%S')
     
-    sdadm <- Calculate.sdadm(df.all.sdadm, "Result", "Station_ID", "Sampled",
-                             '%Y-%m-%d %H:%M:%S')
+    trend_pass <- filter(sdadm, Station_ID %in% qc.1.stn & Station_ID %in% qc.2.stn & Station_ID %in% qc.3.stn)
+    
   } else {
     sdadm <- NULL
   }
   
   df.all <- remove_QAfail(df.all)
+  df.all$month <- month(df.all$Sampled)
   
-  #df.all$Sampled <- as.POSIXct(strptime(df.all$Sampled, format = '%Y-%m-%d')) 
+  if(NROW(qc.3.pass) < 0) {
+    qc.3.pass$Analyte <- "Temperature"
+    qc.3.pass <- dplyr::rename(qc.3.pass, monTest = result)
+    df.all <- merge(df.all, qc.3.pass[,c("Station_ID", "month", "monTest", "Analyte")], by=c("Station_ID", "Analyte", "month"), all.x = TRUE, all.y = FALSE)
+    
+  }
+
+  #save(df.all, file = paste0("RdataFiles/", input$select, ".df.all.", Sys.Date(), ".Rdata"))
+  #load(file = "RdataFiles/Mid Coast.df.all.2018-02-12.Rdata")
+  
+  df.all[df.all$Analyte == "Phosphorus", 'Analyte'] <- 'Total Phosphorus'
+  df.all[df.all$Analyte == "Phosphate, Total as P", 'Analyte'] <- 'Total Phosphorus'
+  df.all[df.all$Analyte == "Dissolved oxygen (DO)", 'Analyte'] <- 'Dissolved Oxygen'
+  df.all[df.all$Analyte == "Total suspended solids", 'Analyte'] <- 'Total Suspended Solids'
+  
+  # - Create-other-dataframes ----------------------------------------------------------
+  
+  #df.all$Sampled <- as.POSIXct(strptime(df.all$Sampled, format = '%Y-%m-%d'))
   
   if (any(c('pH', 'E. Coli', "Enterococcus", "Dissolved Oxygen", 'Total Suspended Solids', 'Total Phosphorus') %in% df.all$Analyte)) {
-    SeaKen <- run_seaKen(df.all)
-  } else {
-    SeaKen <- data.frame()
-  }
+    seaken_other <- run_seaKen(filter(df.all, Analyte %in% c('pH', 
+                                                             'E. Coli', 
+                                                             "Enterococcus", 
+                                                             "Dissolved Oxygen", 
+                                                             'Total Suspended Solids', 
+                                                             'Total Phosphorus')))
+  } else {seaken_other <- data.frame()}
   
+  if(NROW(qc.3.pass) < 0) {
+    seaken_temp <- run_seaKen(filter(df.all, Analyte == "Temperature" & monTest == "pass"))
+  } else {seaken_temp <- data.frame()}
   
-  status <- Stations_Status(df.all) 
+  SeaKen <- rbind(seaken_other, seaken_temp)
   
+  df.sdadm <- sdadm %>%
+        rename(Sampled = date, Result = sdadm) %>%
+        filter(!is.na(Result)) %>%
+        mutate(Analyte = "Temperature")
+  
+  df.other <- df.all %>%
+        select(Sampled, Station_ID, Result, Analyte) %>%
+        filter(!Analyte == "Temperature")
+  
+  status <- Stations_Status(rbind(df.sdadm,df.other))
+
   trend <- Stations_Trend(df.all)
   
   stns <- All_stns_fit_Criteria(trend = trend, 
                                 status = status,
                                 df.all = df.all)
   
+  #- Next -------------------------------------------------------
+  
   if(any(status == "No stations meet Status criteria")) {
     status <- data.frame()
   }
+  
   if(any(trend == "No Stations Meet Trend Criteria")) {
     trend <- data.frame()
   } else {
-    trend <- trend
-    if (any(c('pH', 'E. Coli', "Enterococcus", 'Dissolved Oxygen', 'Total Suspended Solids', 'Total Phosphorus') %in% trend$Analyte)) {
-      SeaKen <- run_seaKen(df.all)
-    }
     SeaKen <- SeaKen[SeaKen$Station_ID %in% trend$Station_ID & SeaKen$analyte %in% unique(trend$Analyte), ]
   }
   
