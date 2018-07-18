@@ -735,33 +735,6 @@ if(nrow(pix.df) > 0){
 ```
 
 
-# Water Quality Status and Trends
-
-Data for the stations in the Basin were retrieved from DEQ (LASAR and ELEMENT), EPA (Storet) USGS (NWIS, Water Quality Portal) databases. The time period for the data query was from 2000-01-01 to 2018-03-01. Parameters included in the query were temperature, pH, dissolved oxygen, total suspended solids, total phosphorus, and bacteria. Data collected on tribal nation land was not included. Only available data with a DEQ data quality status of A+, A, and B were retained for the analysis. Quality status is determined following the DEQ's Laboratory Quality Manual. All EPA and USGS data  were included unless result comments indicated problems with the data. Recent data (after June 2014) from the USGS was marked as provisional data and included in this analysis. 
-
-Status was assessed by evaluating water quality results in relation to the applicable water quality criterion or TMDL allocations. Some stations that had sufficient data to be evaluated for status have a result of NA. This is because the applicable water quality criteria are not yet assigned to those stations. Assignment of the applicable water quality crieria must be completed by hand. Because this analysis was conducted across the entire state there was not enough time to complete the manual assignments.  DEQ water quality standards program is currently working on this task and will have mapping for all stations in the state complete in 2018.
-
-Trends were calculated using a Seasonal Kendall test (Hirsch et al 1982, Hirsch and Slack 1984, and Helsel and Hirsch 2002) at sites with a minimum of eight or more years of available data. A seasonal Kendall test removes the influence of season-to-season fluctuations by calculating the Mann Kendall test (Mann 1945) on each season separately and then comparing the slopes. A significant positive or negative trend was determined across all seasons and years when the significance of the seasonal slopes had a two-tailed p < 0.10.  Prior to applying the seasonal Kendall test data were grouped into monthly "seasons". If the variation in sampling frequency was random, multiple observations within any given month will were collapsed into a single value using the median, otherwise the mean was used.
-
-A summary of water quality status and trends for stations in each subbasin follow in the tables below.
-
-
-```{r status-trend-tbls, results="asis"}
-
-# get the water quality status and trend summary data frames as a list where each list is for a sepetate subbasin
-wqst.list <- get.wqst.summary(huc8.list=huc8.df$HUC_8, df.dir=wqst.dir)
-
-for (i in seq_along(huc8.df$HUC_8)){
-  cat('\n\n')
-  huc8 <- as.character(huc8.df$HUC_8[i])
-  print(knitr::kable(wqst.list[[huc8]], padding = 2, digits = 1, 
-                     caption = tbls(name=paste0("tbl.wqst",i), 
-                                    caption=paste0("Summary of water quality status and trend for stations in the ",huc8.df$HU_8_NAME[i]," Subbasin."))))
-  cat('\n\n')
-}
-
-```
-
 
 
 
