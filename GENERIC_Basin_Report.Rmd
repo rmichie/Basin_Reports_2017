@@ -1,10 +1,9 @@
 ---
 params:
- owrd_basin: Hood
- a.letter: XX
- report_title: 2017 Nonpoint Source Annual Report
- report_subtitle: XX Basin Report
- report_format: word_document
+ owrd_basin: Basin Name
+ report_title:
+ report_subtitle:
+ a.letter:
 title: "`r params$report_title`"
 subtitle: "`r params$report_subtitle`"
 output:
@@ -139,7 +138,7 @@ basemap <- leaflet(width = "100%") %>%
               options = WMSTileOptions(format = "image/png", 
                                        transparent = TRUE),
               layers = "0") %>%
-  hideGroup("Hydropgraphy")  %>%
+  hideGroup("Hydrography")  %>%
   addEasyButton(easyButton(
     icon="fa-globe", title="Zoom to Basin",
     onClick=JS(JS.center.map)))  %>%
@@ -263,34 +262,48 @@ wqlim4.df <- wqlim4.df[,c("POLLUTANT","cat5","catab")]
 
 names(wqlim4.df) <- c("Pollutant", "Segments without a TMDL", "Segments with a TMDL") 
 
-knitr::kable(wqlim4.df, padding = 2, caption = tbls(name="tbl2", caption="Summary of polluted stream segments identified in Oregon's 2012 Integrated Report and Assessment database. Table based on the approved (and partially disapproved) 2012 Integrated Report Listings by the EPA."))
+knitr::kable(wqlim4.df, padding = 2, caption = tbls(name="tbl2", caption="Number of impaired stream segments identified in Oregon's 2012 Integrated Report and Assessment database. Table based on the approved (and partially disapproved) 2012 Integrated Report Listings by the EPA."))
 
 ```
 
-```{r TMDL-bullets-setup}
+
+```{r TMDL-setup}
 
 tmdls.df <- read_excel(path=paste0(lu_dir,"/Info_Integrated.xlsx"), sheet="TMDLs", na = c("","N/A", " "))
 tmdls.df <- tmdls.df[tmdls.df$owrd_basin %in% owrd_basin,]
 
 if(NROW(tmdls.df) > 0){
-  tmdl.bullets <- paste0("* [",tmdls.df$TMDL,"](",tmdls.df$website,")\n", collapse="")
+  
+  # sort impairments by alphabetical order
+  tmdls.df$impairments <- unlist(lapply(strsplit(tmdls.df$impairments, ","),  function(x) paste(sort(trimws(unlist(x))), collapse = ", ")))
+  tmdls.df$weblink <- paste0("[",tmdls.df$TMDL,"](",tmdls.df$website,")")
+
+  tmdls.df2 <- tmdls.df[,c("weblink","impairments")]
+  colnames(tmdls.df2) <- c("TMDL Document Name", "Impairments Addressed")
+  
+  txt.tmdl <- paste0(tbls(name='tbl.tmdls', display='cite'), " lists the TMDLs that have been approved in the ",owrd_basin," Basin.")
+
 } else {
-  tmdl.bullets <- paste0("* **Currently there are no TMDLs in the ",owrd_basin," Basin.**")
+  txt.tmdl <- paste0("\n\n* **Currently there are no TMDLs in the ",owrd_basin," Basin.**")
 }
 
 ```
-
-
 ## Total Maximum Daily Load Watershed Plans
 
 The federal Clean Water Act requires that water pollutant reduction plans, called Total Maximum Daily Loads (TMDLs), be developed for water bodies that are listed in Category 5 of the Integrated Report (303(d) List). TMDLs describe the maximum amount of pollutants that can enter the river or stream and still meet water quality standards.
 
 TMDLs take into account the pollution from all sources including discharges from industry and sewage treatment facilities, runoff from farms, forests and urban areas, and natural sources. TMDLs include a margin of safety to account for uncertainty, and may include a reserve capacity that allows for future discharges to a river or stream. DEQ typically develops TMDLs on a watershed, subbasin, or basin level and occasionally at the reach level depending on the type and extent of impairments. 
 
-The Water Quality Management Plan (WQMP) is the framework for TMDL implementation that is issued by Oregon along with the TMDL (Oregon Administrative Rules 340-042-0040(l)). The TMDL and WQMP serve as a multi-sector plan and provides the blueprint for TMDL related implementation activities. The TMDL and WQMP also provide the reasonable assurance that the plan will be implemented and allocations will be achieved. The following TMDLs have been approved in the `r owrd_basin`:
+The Water Quality Management Plan (WQMP) is the framework for TMDL implementation that is issued by Oregon along with the TMDL (Oregon Administrative Rules 340-042-0040(l)). The TMDL and WQMP serve as a multi-sector plan and provides the blueprint for TMDL related implementation activities. The TMDL and WQMP also provide the reasonable assurance that the plan will be implemented and allocations will be achieved. `r txt.tmdl`
 
 
-`r tmdl.bullets`
+```{r TMDL-table, results="asis"}
+
+if(NROW(tmdls.df) > 0){
+  print(knitr::kable(tmdls.df2, padding = 2, caption = tbls(name="tbl.tmdls", caption=paste0("Approved TMDLs and the impairments addressed by those TMDLs in the ",owrd_basin," Basin."))))
+}
+
+```
 
 
 # Implementation Highlights
@@ -310,7 +323,7 @@ pix.cap <- NULL
 
 if(projects.n <= 0){
   
-  txt.319 <-paste0("In 2017 there were no active 319 projects in the ",owrd_basin,".")
+  txt.319 <-paste0("In 2017 there were no 319 projects with reported outputs in the ",owrd_basin,".")
   
   } else {
     
@@ -320,9 +333,9 @@ if(projects.n <= 0){
     txt.319 <- paste0("In 2017, there ",was.were(projects.n)," ",
                       numbers.to.words(projects.n),
                       " 319 project",s(projects.n),
-                      " active with a total grant budget of ",
+                      " active that reported project outputs and accomplishments to DEQ. Combined these projects have a total grant budget of ",
                       projects.budget, ". ", tbls('tbl.319_projects', display = 'cite'),
-                      " describes the active project",s(projects.n)," and the reported outputs.")
+                      " describes these project",s(projects.n)," and the reported outputs.")
     
     deq319.df <- projects.df[projects.df$owrd_basin %in% owrd_basin & projects.df$fund_program == program, 
                              c("project_name","grantee", "objectives", "outputs")]
@@ -342,11 +355,9 @@ if(projects.n <= 0){
 
 ```
 
-Federal Section 319(h) funds are provided annually through the EPA to states for the development and implementation of each state's Nonpoint Source Management Program. In Oregon a portion of 319 grant funding is used to support community or partner projects that address Oregon's nonpoint source program priorities. 
+Federal Section 319(h) funds are provided annually through the EPA to states for the development and implementation of each state's Nonpoint Source Management Program. In Oregon a portion of 319 grant funding is "passed through" to support community or partner projects that address Oregon's nonpoint source program priorities. Generally, DEQ requires grantees to report annually on the progress made implementing their grant project. This section highlights those outputs and accomplishments reported to DEQ in 2017. Note this section does not identify or include projects proposed and awarded a grant in 2017. Outputs and accomplishments for those projects will be reported to DEQ in future years once they have been implemented. For a listing of projects proposed and awarded a grant in 2017 see section 3.6.2.
 
 `r txt.319`
-
-Learn more about Section 319 funds at http://www.oregon.gov/deq/wq/programs/Pages/Nonpoint-319-Grants.aspx or https://www.epa.gov/lakes/clean-water-act-section-319
 
 
 ```{r 319-tbl, results="asis"}
@@ -354,7 +365,7 @@ Learn more about Section 319 funds at http://www.oregon.gov/deq/wq/programs/Page
 if(projects.n > 0) {
   print(knitr::kable(deq319.df, digits = 1, row.names=FALSE,
                      caption = tbls(name="tbl.319_projects", 
-                                    caption="Section 319 grant funded projects and outputs for 2017.")))
+                                    caption="Project outputs reported in 2017 for Section 319 pass through grants.")))
 }
 
 ```
@@ -383,7 +394,7 @@ pix.cap <- NULL
 
 if(projects.n <= 0){
   
-  txt.CWSRF <-paste0("In 2017 there were no active nonpoint source related Clean Water State Revolving Fund projects in the ",owrd_basin,".")
+  txt.CWSRF <-paste0("In 2017 there were no nonpoint source related Clean Water State Revolving Fund projects with reported outputs in the ",owrd_basin,".")
 
   } else {
     
@@ -415,7 +426,7 @@ if(projects.n <= 0){
 ```
 
 
-The Clean Water State Revolving Fund loan program provides below market rate loans to public agencies for the planning, design and construction of various projects that prevent or mitigate water pollution. Eligible agencies include federally recognized Indian tribal governments, cities, counties, sanitary districts, soil and water conservation districts, irrigation districts, various special districts and intergovernmental entities. DEQ partners with Oregon communities to implement projects that attain and maintain water quality standards, and are necessary to protect beneficial uses.
+The Clean Water State Revolving Fund loan program provides below market rate loans to public agencies for the planning, design and construction of various projects that prevent or mitigate water pollution. Eligible agencies include federally recognized Indian tribal governments, cities, counties, sanitary districts, soil and water conservation districts, irrigation districts, various special districts and intergovernmental entities. DEQ partners with Oregon communities to implement projects that attain and maintain water quality standards, and are necessary to protect beneficial uses. This section highlights the ongoing projects and the outputs and accomplishments reported to DEQ in 2017.
 
 `r txt.CWSRF`
 
@@ -425,7 +436,7 @@ The Clean Water State Revolving Fund loan program provides below market rate loa
 if(projects.n > 0){
   print(knitr::kable(deqCWSRF.df, padding = 2, digits = 1, row.names=FALSE,  
                caption=tbls(name="tbl.CWSRF_projects", 
-                            caption="Nonpoint source related Clean Water State Revolving Fund projects and outputs for 2017.")))
+                            caption="Nonpoint source related Clean Water State Revolving Fund project outputs reported in 2017.")))
 }
 
 ```
@@ -453,7 +464,7 @@ pix.cap <- NULL
 
 if(projects.n <= 0){
   
-  txt.DWSRF <-paste0("In 2017 there were no active nonpoint source related Safe Drinking Water State Revolving Fund projects in the ",owrd_basin,".")
+  txt.DWSRF <-paste0("In 2017 there were no nonpoint source related Safe Drinking Water State Revolving Fund projects with reported outputs in the ",owrd_basin,".")
 
   } else {
     
@@ -484,7 +495,7 @@ if(projects.n <= 0){
 
 ```
 
-The Oregon Health Authority regulates drinking water under state law and the Safe Drinking Water Act and works cooperatively with DEQ on source water protection efforts. Using the Drinking Water Revolving Loan Fund, OHA funds Source Water Protection Grants (up to $30,000 per public water system) for source water protection activities, monitoring, and planning in Drinking Water Source Areas. In addition, loans are available for improving drinking water treatment, source water protection activities, or land acquisition in source areas. Oregon's Infrastructure Finance Authority is responsible for administering these projects. The loan fund set-asides also fund five Drinking Water Protection positions at DEQ that provide technical assistance to public water systems and communities while they develop and implement strategies that reduce the risk within the delineated source water areas.
+The Oregon Health Authority regulates drinking water under state law and the Safe Drinking Water Act and works cooperatively with DEQ on source water protection efforts. Using the Drinking Water Revolving Loan Fund, OHA funds Source Water Protection Grants (up to $30,000 per public water system) for source water protection activities, monitoring, and planning in Drinking Water Source Areas. In addition, loans are available for improving drinking water treatment, source water protection activities, or land acquisition in source areas. Oregon's Infrastructure Finance Authority is responsible for administering these projects. The loan fund set-asides also fund five Drinking Water Protection positions at DEQ that provide technical assistance to public water systems and communities while they develop and implement strategies that reduce the risk within the delineated source water areas. This section highlights the ongoing projects and the outputs and accomplishments reported to DEQ in 2017.
 
 `r txt.DWSRF`
 
@@ -523,7 +534,7 @@ pix.cap <- NULL
 
 if(projects.n <= 0){
   
-  txt.DWPP <-paste0("In 2017 there were no active Drinking Water Providers Partnership projects in the ",owrd_basin,".")
+  txt.DWPP <-paste0("In 2017 there were no active Drinking Water Providers Partnership projects with reported outputs in the ",owrd_basin,".")
 
   } else {
     
@@ -554,7 +565,7 @@ if(projects.n <= 0){
 ```
 
 
-Oregon DEQ participates in the Drinking Water Providers Partnership (DWPP) with USDA Forest Service Region 6, EPA Region 10, the U.S. Bureau of Land Management OR/WA Office, the Washington Department of Health, Geos Institute and WildEarth Guardians. Together, these partners coordinate a competitive grant solicitation and award program for environmental conservation and restoration projects in municipal watersheds across the Northwest. The Drinking Water Providers Partnership made the first of the annual awards in 2016 and most projects have a focus on nonpoint sources of pollution. The goal of the Partnership and the funding is to develop and support local partnerships to restore and protect the health of watersheds which communities depend upon for drinking water while also benefiting aquatic and riparian ecosystems, including the native fish that inhabit them.
+Oregon DEQ participates in the Drinking Water Providers Partnership (DWPP) with USDA Forest Service Region 6, EPA Region 10, the U.S. Bureau of Land Management OR/WA Office, the Washington Department of Health, Geos Institute and WildEarth Guardians. Together, these partners coordinate a competitive grant solicitation and award program for environmental conservation and restoration projects in municipal watersheds across the Northwest. The Drinking Water Providers Partnership made the first of the annual awards in 2016 and most projects have a focus on nonpoint sources of pollution. The goal of the Partnership and the funding is to develop and support local partnerships to restore and protect the health of watersheds which communities depend upon for drinking water while also benefiting aquatic and riparian ecosystems, including the native fish that inhabit them. This section highlights the ongoing projects and the outputs and accomplishments reported to the DWPP in 2017.
 
 `r txt.DWPP`
 
@@ -594,7 +605,7 @@ projects.n <- NROW(projects.df)
 
 if(projects.n <= 0){
   
-  txt.OWEB <-paste0("In 2017 there were no OWEB funded projects in the ",owrd_basin,".")
+  txt.OWEB <-paste0("In 2017 there were no OWEB funded projects compleated and reported on in the ",owrd_basin,".")
 
   } else {
     
@@ -606,9 +617,9 @@ if(projects.n <= 0){
   
     colnames(projects.df) <- c("Subbasin","Project Name", "Project Type", "Project Description", "Participants", "Reported Outputs")
     
-    txt.OWEB <- paste0("In 2017 there ",was.were(projects.n)," ",
+    txt.OWEB <- paste0("Based on the most recent data available in OWEB's Oregon Watershed Restoration Inventory (OWRI) database, there ",was.were(projects.n)," ",
                       numbers.to.words(projects.n),
-                      " OWEB funded project",s(projects.n)," with a total cash and inkind budget of ",
+                      " OWEB funded project",s(projects.n)," completed in 2016 with a total cash and inkind budget of ",
                       projects.budget, 
                       ". The bar graph in ",
                       figs(name='figs.oweb_costs', display = 'cite'),
@@ -656,7 +667,7 @@ The Oregon Watershed Enhancement Board (OWEB) is a state agency that provides gr
 
 `r txt.OWEB`
 
-Learn more about OWEB grant programs at http://www.oregon.gov/oweb/grants/Pages/grant-programs.aspx.
+Learn more about OWEB grant programs at https://www.oregon.gov/OWEB/grants/Pages/grant-programs.aspx.
 
 
 ```{r OWEB-costs, fig.cap=figs(name="figs.oweb_costs", caption= "Cash and inkind dollars spent in each subbasin for different project types completed in 2016, the most recent year data is available in OWEB's OWRI database.")}
@@ -673,7 +684,7 @@ if(projects.n > 0){
 if(projects.n > 0){
   print(knitr::kable(projects.df, padding = 2, digits = 1, row.names=FALSE, 
                      caption = tbls(name="tbl.OWEB_projects", 
-                                    caption="OWEB grant funded projects compleated in 2016, the most recent year data is available in the OWEB OWRI database.")))
+                                    caption="OWEB grant funded projects completed in 2016, the most recent year data is available in the OWEB OWRI database.")))
 }
 ```
 
@@ -692,7 +703,7 @@ colnames(tmdl.imp.df) <- c("TMDL", "DMA or Third Party", "Reported Actions")
 
 `r if(nrow(tmdl.imp.df) > 0){"## TMDL Implementation Highlights\n\n
 
-The following are 2017 cycle actions related to TMDL implementation from Designated Management Agencies (DMAs) or Third parties.\n\n"}`
+TMDL implementation actions taken by Designated Management Agencies (DMAs) or third parties are described in tbls(name="tbl.dma_projects", display = "cite"). Most of these actions were summarized from annual reports submitted by DMAs to DEQ in calendar year 2017.\n\n"}`
 
 
 ```{r dma-projects, results="asis"}
