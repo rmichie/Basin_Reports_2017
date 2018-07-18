@@ -3,6 +3,8 @@
 
 setwd("//deqhq1/WQNPS/NPS_Annual_Reports/2017/Basin_Reports_2017/")
 
+output.dir = "//deqhq1/WQNPS/NPS_Annual_Reports/2017/Basin_Reports_2017/"
+
 ##owrd_basin <- "Deschutes"
 ##owrd_basin <- "Goose & Summer Lakes"
 ##owrd_basin <- "Grande Ronde"
@@ -20,7 +22,7 @@ setwd("//deqhq1/WQNPS/NPS_Annual_Reports/2017/Basin_Reports_2017/")
 ##owrd_basin <- "South Coast"
 ##owrd_basin <- "Umatilla"
 ##owrd_basin <- "Umpqua"
-##owrd_basin <- "Willamette"
+owrd_basin <- "Willamette"
 
 owrd_basins <- c("Deschutes",
                  "Goose & Summer Lakes",
@@ -78,26 +80,28 @@ for (owrd_basin in owrd_basins) {
   report.title.html <- paste(owrd_basin, " Basin Report")
   report.subtitle.html <- paste("2017 Oregon Nonpoint Source Annual Report Appendix ", a.letter)
   
-  output.name.html <-gsub(" ", "_", paste0(owrd_basin,"_Basin_Report.html"), fixed = TRUE)
-  output.name.docx <-gsub(" ", "_", paste0(owrd_basin,"_Basin_Report.docx"), fixed = TRUE)
+  report.name.html <-gsub(" ", "_", paste0(owrd_basin,"_Basin_Report.html"), fixed = TRUE)
+  report.name.docx <-gsub(" ", "_", paste0(owrd_basin,"_Basin_Report.docx"), fixed = TRUE)
   
   # WORD
   rmarkdown::render(input="GENERIC_Basin_Report.Rmd",
                     params = list(owrd_basin=owrd_basin,
                                   report_title = report.title.docx,
                                   report_subtitle = report.subtitle.docx,
-                                  a.letter=a.letter,
-                                  report_format= "word_document"),
-                    output_file=output.name.docx)
+                                  a.letter=a.letter),
+                    output_format = "word_document",
+                    output_dir = output.dir,
+                    output_file=report.name.docx)
   
   # HTML
   #rmarkdown::render(input="GENERIC_Basin_Report.Rmd",
   #                  params = list(owrd_basin=owrd_basin,
   #                                report_title = report.title.html,
   #                                report_subtitle = report.subtitle.html,
-  #                                a.letter=a.letter,
-  #                                report_format = "html_document"),
-  #                  output_file=output.name.html)
+  #                                a.letter=a.letter),
+  #                                output_format = "html_document",
+  #                  output_dir = output.dir,
+  #                  output_file=report.name.html)
   
 }
 
