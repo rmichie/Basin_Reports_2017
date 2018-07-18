@@ -2,8 +2,8 @@
 get.landuse <- function(nlcd_huc8_df, geo_unit, geo_unit_col, group_col) {
   # reclassess and summarizes landuse
   
-  require(dplyr)
-  require(tidyr)
+  library(dplyr)
+  library(tidyr)
   
   #geo_unit_col_en <- quo(geo_unit_col)
   #group_col_en <- quo(group_col)
@@ -42,8 +42,8 @@ map.basemap <-function() {
   # THIS DOES NOT WORK RIGHT NOW
   # Just a parking lot for old code
   
-  require(OpenStreetMap)
-  require(ggplot2)
+  library(OpenStreetMap)
+  library(ggplot2)
   
   bb <- as.vector(bbox(owrd_basins_shp_dd))
 
@@ -72,10 +72,10 @@ map.landuse <- function() {
   # THIS DOES NOT WORK RIGHT NOW
   # Just a parking lot for old code
   
-  require(leaflet)
-  require(raster)
-  require(rgdal)
-  require(rgeos)
+  library(leaflet)
+  library(raster)
+  library(rgdal)
+  library(rgeos)
   
   GetURL <- function(service, host = "basemap.nationalmap.gov") {
     sprintf("https://%s/arcgis/services/%s/MapServer/WmsServer", host, service)
@@ -179,8 +179,8 @@ get.OWRI.costs <- function(owri.mdb, huc8.names, complete.years) {
   
   # --- Load required packages  -----------------
   library(RODBC)
-  require(dplyr)
-  require(tidyr)
+  library(dplyr)
+  library(tidyr)
   
   options(stringsAsFactors = FALSE)
   
@@ -261,10 +261,11 @@ get.OWRI.projects <- function(owri.mdb, huc8.names, complete.years) {
   
   # --- Load required packages  -----------------
   library(RODBC)
-  require(dplyr)
-  require(tidyr)
-  require(ggplot2)
-  require(scales)
+  library(dplyr)
+  library(tidyr)
+  library(ggplot2)
+  library(scales)
+  library(textstem)
   
   options(stringsAsFactors = FALSE)
   
@@ -297,6 +298,14 @@ get.OWRI.projects <- function(owri.mdb, huc8.names, complete.years) {
   
   # This keeps the numerics from having endless precision when converting to character.
   owri.df$Quantity <- round(owri.df$Quantity,2)
+  
+  # Make certain words singular when there is only one unit implemented
+  owri.df$Result <- ifelse(owri.df$Quantity==1, gsub(owri.df$Result, pattern="crossings ", replacement="crossing "), owri.df$Result)
+  owri.df$Result <- ifelse(owri.df$Quantity==1, gsub(owri.df$Result, pattern="acres ", replacement="acre "), owri.df$Result)
+  owri.df$Result <- ifelse(owri.df$Quantity==1, gsub(owri.df$Result, pattern="pools ", replacement="pool "), owri.df$Result)
+  owri.df$Result <- ifelse(owri.df$Quantity==1, gsub(owri.df$Result, pattern="Miles ", replacement="Mile "), owri.df$Result)
+  owri.df$Result <- ifelse(owri.df$Quantity==1, gsub(owri.df$Result, pattern="miles ", replacement="mile "), owri.df$Result)
+  owri.df$Result <- ifelse(owri.df$Quantity==1, gsub(owri.df$Result, pattern="stations ", replacement="station "), owri.df$Result)
   
   owri.df2 <- owri.df %>%
     unite(col="result2",c("Quantity","Result"), sep = " ", remove=FALSE) %>% 
