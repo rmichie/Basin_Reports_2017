@@ -333,9 +333,9 @@ if(projects.n <= 0){
     txt.319 <- paste0("In 2017, there ",was.were(projects.n)," ",
                       numbers.to.words(projects.n),
                       " 319 project",s(projects.n),
-                      " active that reported project outputs and accomplishments to DEQ. Combined these projects have a total grant budget of ",
+                      " active that reported project outputs and accomplishments to DEQ. Combined the projects have a total grant budget of ",
                       projects.budget, ". ", tbls('tbl.319_projects', display = 'cite'),
-                      " describes these project",s(projects.n)," and the reported outputs.")
+                      " describes the project",s(projects.n)," and the reported outputs.")
     
     deq319.df <- projects.df[projects.df$owrd_basin %in% owrd_basin & projects.df$fund_program == program, 
                              c("project_name","grantee", "objectives", "outputs")]
@@ -404,9 +404,9 @@ if(projects.n <= 0){
     txt.CWSRF <- paste0("In 2017 there ",was.were(projects.n)," ",
                       numbers.to.words(projects.n),
                       " nonpoint source related Clean Water State Revolving Fund project",s(projects.n),
-                      " active with a total budget of ",
+                      " active that reported project outputs and accomplishments to DEQ. Combined the projects have a total budget of ",
                       projects.budget, ". ", tbls('tbl.CWSRF_projects', display = 'cite'),
-                      " describes the active project",s(projects.n)," and the reported outputs.")
+                      " describes the project",s(projects.n)," and the reported outputs.")
     
     deqCWSRF.df <- projects.df[projects.df$owrd_basin %in% owrd_basin & projects.df$fund_program == program, 
                              c("project_name","grantee", "objectives", "outputs")]
@@ -474,9 +474,9 @@ if(projects.n <= 0){
     txt.DWSRF <- paste0("In 2017 there ",was.were(projects.n)," ",
                       numbers.to.words(projects.n),
                       " nonpoint source related Safe Drinking Water State Revolving Fund project",s(projects.n),
-                      " active with a total budget of ",
+                      " active that reported project outputs and accomplishments to DEQ. Combined the projects have a total budget of ",
                       projects.budget, ". ", tbls('tbl.DWSRF_projects', display = 'cite'),
-                      " describes the active project",s(projects.n)," and the reported outputs.")
+                      " describes the project",s(projects.n)," and the reported outputs.")
     
     deqDWSRF.df <- projects.df[projects.df$owrd_basin %in% owrd_basin & projects.df$fund_program == program, 
                              c("project_name","grantee", "objectives", "outputs")]
@@ -543,9 +543,10 @@ if(projects.n <= 0){
     
     txt.DWPP <- paste0("In 2017 there ",was.were(projects.n)," ",
                       numbers.to.words(projects.n),
-                      " Drinking Water Providers Partnership project",s(projects.n)," active with a total budget of ",
+                      " Drinking Water Providers Partnership project",s(projects.n),
+                      " active that reported project outputs and accomplishments to te DWPP. Combined the projects have a total budget of ",
                       projects.budget, ". ", tbls('tbl.DWPP_projects', display = 'cite'),
-                      " describes the active project",s(projects.n)," and the reported outputs.")
+                      " describes the project",s(projects.n)," and the reported outputs.")
     
     deqDWPP.df <- projects.df[projects.df$owrd_basin %in% owrd_basin & projects.df$fund_program == program, 
                              c("project_name","grantee", "objectives", "outputs")]
@@ -700,10 +701,9 @@ tmdl.imp.df <-projects.df[projects.df$owrd_basin %in% owrd_basin, c("TMDL", "DMA
 colnames(tmdl.imp.df) <- c("TMDL", "DMA or Third Party", "Reported Actions")
 ```
 
-
 `r if(nrow(tmdl.imp.df) > 0){"## TMDL Implementation Highlights\n\n
 
-TMDL implementation actions taken by Designated Management Agencies (DMAs) or third parties are described in tbls(name="tbl.dma_projects", display = "cite"). Most of these actions were summarized from annual reports submitted by DMAs to DEQ in calendar year 2017.\n\n"}`
+TMDL implementation actions taken by Designated Management Agencies (DMAs) or third parties are described in the table below. Most of these actions were summarized from annual reports submitted by DMAs to DEQ in calendar year 2017.\n\n"}`
 
 
 ```{r dma-projects, results="asis"}
