@@ -22,7 +22,7 @@ output.dir = "//deqhq1/WQNPS/NPS_Annual_Reports/2017/Basin_Reports_2017/"
 ##owrd_basin <- "South Coast"
 ##owrd_basin <- "Umatilla"
 ##owrd_basin <- "Umpqua"
-owrd_basin <- "Willamette"
+##owrd_basin <- "Willamette"
 
 owrd_basins <- c("Deschutes",
                  "Goose & Summer Lakes",
@@ -48,7 +48,7 @@ owrd_basins <- c("Deschutes",
 # List of the Appendix letter prefix for each basin
 appendix_letter <- list("Deschutes"="A",
                         "Goose & Summer Lakes"="B",
-                        "Grande Ronde"="c",
+                        "Grande Ronde"="C",
                         "Hood"="D",
                         "John Day"="E",
                         "Klamath"="F",
@@ -59,10 +59,11 @@ appendix_letter <- list("Deschutes"="A",
                         "Owyhee"="K",
                         "Powder"="L",
                         "Rogue"="M",
-                        "South Coast"="N",
-                        "Umatilla"="O",
-                        "Umpqua"="P",
-                        "Willamette"="Q")
+                        "Sandy"="N",
+                        "South Coast"="O",
+                        "Umatilla"="P",
+                        "Umpqua"="Q",
+                        "Willamette"="R")
 
 
 
@@ -74,14 +75,14 @@ for (owrd_basin in owrd_basins) {
   # Set the correct Appendix letter
   a.letter <- appendix_letter[[owrd_basin]]
   
-  report.title.docx <- paste("Appendix ", a.letter)
-  report.subtitle.docx <- paste(owrd_basin, " Basin Report")
+  report.title.docx <- paste0("Appendix ", a.letter)
+  report.subtitle.docx <- paste0(owrd_basin, " Basin Report")
   
-  report.title.html <- paste(owrd_basin, " Basin Report")
-  report.subtitle.html <- paste("2017 Oregon Nonpoint Source Annual Report Appendix ", a.letter)
+  report.title.html <- paste0(owrd_basin, " Basin Report")
+  report.subtitle.html <- paste0("2017 Oregon Nonpoint Source Annual Report Appendix ", a.letter)
   
-  report.name.html <-gsub(" ", "_", paste0(owrd_basin,"_Basin_Report.html"), fixed = TRUE)
-  report.name.docx <-gsub(" ", "_", paste0(owrd_basin,"_Basin_Report.docx"), fixed = TRUE)
+  report.name.html <-gsub(" ", "_", paste0(report.title.docx," ",owrd_basin,"_Basin_Report.html"), fixed = TRUE)
+  report.name.docx <-gsub(" ", "_", paste0(report.title.docx," ",owrd_basin,"_Basin_Report.docx"), fixed = TRUE)
   
   # WORD
   rmarkdown::render(input="GENERIC_Basin_Report.Rmd",
