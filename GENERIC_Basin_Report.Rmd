@@ -231,7 +231,7 @@ knitr::kable(bc.df, padding = 2, digits = 1, caption = tbls(name = "tbl.basin_co
 
 ## Water Quality Impaired Stream Segments
 
-Under section 303(d) of the Clean Water Act, states, territories and authorized tribes must submit lists of impaired waters. These waters are too polluted or otherwise degraded to meet water quality standards. The law requires that states establish priority rankings for waters on the lists and develop Total Maximum Daily Loads (TMDLs) for these waters. - Sources: [ODEQ](http://www.oregon.gov/deq/wq/Pages/WQ-Assessment.aspx), [USEPA](https://www.epa.gov/tmdl/program-overview-303d-listing-impaired-waters)
+Under section 303(d) of the Clean Water Act, states, territories and authorized tribes must submit lists of impaired waters. Impaired waters are those that do not attain water quality standards or support all designated uses. The law requires that states establish priority rankings for waters on the lists and develop Total Maximum Daily Loads (TMDLs) for these waters. `r tbls(name='tbl.wql', display='cite')` identifies the number of `r owrd_basin` Basin waterbody segments impaired by parameter from the 2012 Integrated Report and and the number of segments with approved TMDLs. Sources: [ODEQ](http://www.oregon.gov/deq/wq/Pages/WQ-Assessment.aspx), [USEPA](https://www.epa.gov/tmdl/program-overview-303d-listing-impaired-waters)
 
 
 ```{r wq-limited}
@@ -260,9 +260,9 @@ if(!("catab" %in% colnames(wqlim4.df))) {wqlim4.df$catab <- 0}
 
 wqlim4.df <- wqlim4.df[,c("POLLUTANT","cat5","catab")]
 
-names(wqlim4.df) <- c("Pollutant", "Segments without a TMDL", "Segments with a TMDL") 
+names(wqlim4.df) <- c("Parameter", "Segments without a TMDL", "Segments with a TMDL") 
 
-knitr::kable(wqlim4.df, padding = 2, caption = tbls(name="tbl2", caption="Number of impaired stream segments identified in Oregon's 2012 Integrated Report and Assessment database. Table based on the approved (and partially disapproved) 2012 Integrated Report Listings by the EPA."))
+knitr::kable(wqlim4.df, padding = 2, caption = tbls(name="tbl.wql", caption="Number of impaired stream segments with and without a TMDL as identified in Oregon's 2012 Integrated Report and Assessment database"))
 
 ```
 
@@ -292,15 +292,15 @@ if(NROW(tmdls.df) > 0){
 
 The federal Clean Water Act requires that water pollutant reduction plans, called Total Maximum Daily Loads (TMDLs), be developed for water bodies that are listed in Category 5 of the Integrated Report (303(d) List). TMDLs describe the maximum amount of pollutants that can enter the river or stream and still meet water quality standards.
 
-TMDLs take into account the pollution from all sources including discharges from industry and sewage treatment facilities, runoff from farms, forests and urban areas, and natural sources. TMDLs include a margin of safety to account for uncertainty, and may include a reserve capacity that allows for future discharges to a river or stream. DEQ typically develops TMDLs on a watershed, subbasin, or basin level and occasionally at the reach level depending on the type and extent of impairments. 
+TMDLs take into account the pollution from major sources including discharges from industry and sewage treatment facilities, runoff from farms, forests and urban areas, and natural sources. TMDLs include a margin of safety to account for uncertainty, and may include a reserve capacity that allows for future discharges to a river or stream. DEQ typically develops TMDLs on a watershed, subbasin, or basin level and occasionally at the reach level depending on the type and extent of impairments. 
 
-The Water Quality Management Plan (WQMP) is the framework for TMDL implementation that is issued by Oregon along with the TMDL (Oregon Administrative Rules 340-042-0040(l)). The TMDL and WQMP serve as a multi-sector plan and provides the blueprint for TMDL related implementation activities. The TMDL and WQMP also provide the reasonable assurance that the plan will be implemented and allocations will be achieved. `r txt.tmdl`
+The Water Quality Management Plan (WQMP) is the framework for TMDL implementation that is issued by Oregon along with the TMDL (Oregon Administrative Rules 340-042-0040(l)). The TMDL and WQMP serve as a multi-sector plan and provides the blueprint for TMDL related implementation activities. `r txt.tmdl`
 
 
 ```{r TMDL-table, results="asis"}
 
 if(NROW(tmdls.df) > 0){
-  print(knitr::kable(tmdls.df2, padding = 2, caption = tbls(name="tbl.tmdls", caption=paste0("Approved TMDLs and the impairments addressed by those TMDLs in the ",owrd_basin," Basin."))))
+  print(knitr::kable(tmdls.df2, padding = 2, caption = tbls(name="tbl.tmdls", caption=paste0("Approved TMDLs in the ",owrd_basin," Basin and the impairments addressed by those TMDLs."))))
 }
 
 ```
@@ -355,7 +355,7 @@ if(projects.n <= 0){
 
 ```
 
-Federal Section 319(h) funds are provided annually through the EPA to states for the development and implementation of each state's Nonpoint Source Management Program. In Oregon a portion of 319 grant funding is "passed through" to support community or partner projects that address Oregon's nonpoint source program priorities. Generally, DEQ requires grantees to report annually on the progress made implementing their grant project. This section highlights those outputs and accomplishments reported to DEQ in 2017. Note this section does not identify or include projects proposed and awarded a grant in 2017. Outputs and accomplishments for those projects will be reported to DEQ in future years once they have been implemented. For a listing of projects proposed and awarded a grant in 2017 see section 3.6.2.
+Federal Section 319(h) funds are provided annually through the EPA to states for the development and implementation of each state's Nonpoint Source Management Program. In Oregon a portion of 319 grant funding is "passed through" to support community or partner projects that address Oregon's nonpoint source program priorities. Generally, DEQ requires grantees to report annually on the progress made implementing their grant project. This section highlights those outputs and accomplishments reported to DEQ in 2017. Note this section does not identify or include projects proposed and awarded a grant in 2017. Outputs and accomplishments for those projects will be reported to DEQ in future years once they have been implemented. For a listing of projects proposed and awarded a grant in 2017 see Section 3.6.2 of the main report.
 
 `r txt.319`
 
@@ -637,26 +637,57 @@ if(projects.n <= 0){
     oweb.costs$ActivityType <- factor(oweb.costs$ActivityType)
     levels(oweb.costs$ActivityType) <- gsub(" ", "\n", levels(oweb.costs$ActivityType))
     
+    # Find percent of Total per subbasin
+    #oweb.costs <- oweb.costs %>% 
+    #  group_by(ActivityType) %>% 
+    #  mutate(sum(Total))
+    
     oweb.cost.plot <- gsub(" ", "", paste0(getwd(),"/pictures/oweb_cost_plot_",owrd_basin,".png"), fixed = TRUE)
-
-    # bar plot
+    
+    # bar plot no text
     p1 <- ggplot(data=oweb.costs, aes(x=ActivityType, y=Total)) +
       geom_bar(stat="identity", width = .95) +
       scale_y_continuous(labels = scales::dollar) +
-      geom_text(aes(label=dollar(Total)), position=position_dodge(width=0.9), vjust=-0.25, size = 2) +
-      ylim(0,max(oweb.costs$Total) + 60000) +
-      xlab("Project Type") +
+      xlab("Project Activity Type") +
       theme(axis.title.y=element_blank(),
-            axis.text.y=element_blank(),
-            axis.ticks.y=element_blank(),
-            axis.text.x=element_text(size=6)) +
-      facet_wrap(~SubbasinActual, ncol=3 )
+            axis.text.x=element_text(size=9, angle = 90, vjust = 0.5, hjust=1),
+            panel.grid.minor = element_blank()) +
+      facet_wrap(~SubbasinActual, ncol=3)
+
+    # bar plot
+    # p1 <- ggplot(data=oweb.costs, aes(x=ActivityType, y=Total)) +
+    #   geom_bar(stat="identity", width = .95) +
+    #   scale_y_continuous(labels = scales::dollar) +
+    #   geom_text(aes(label=dollar(Total)), position=position_dodge(width=0.9), vjust=-0.25, size = 2) +
+    #   ylim(0,max(oweb.costs$Total) + 60000) +
+    #   xlab("Project Type") +
+    #   theme(axis.title.y=element_blank(),
+    #         axis.text.y=element_blank(),
+    #         axis.ticks.y=element_blank(),
+    #         axis.text.x=element_text(size=7),
+    #         panel.grid.major.y = element_blank(), 
+    #         panel.grid.minor = element_blank()) +
+    #   facet_wrap(~SubbasinActual, ncol=3)
+    
+    # Bar plot of percent
+    # p2 <- ggplot(data=oweb.costs, aes(x=ActivityType, y=PercentTotal)) +
+    #   geom_bar(stat="identity", width = .95) +
+    #   geom_text(aes(label=percent(PercentTotal)), color="black", position=position_dodge(width=0.9), vjust=-0.5, size = 3.5) +
+    #   ylim(0,1.1) +
+    #   xlab("Project Type") +
+    #   theme(axis.title.y=element_blank(),
+    #         axis.text.y=element_blank(),
+    #         axis.ticks.y=element_blank(),
+    #         axis.text.x=element_text(size=9),
+    #         panel.grid.major.y = element_blank(), 
+    #         panel.grid.minor = element_blank()) +
+    #   facet_wrap(~SubbasinActual, ncol=3)
 
     # Save the plot
     ggsave(file=oweb.cost.plot,
            plot=p1,
            height=6,
-           width=7.75,
+           width=6.5,
            units="in")
 
 }
