@@ -7,3 +7,4 @@ pictures/**
 *.html
 *.Rdata
 *.RdataTmp
+status_and_trend/*
