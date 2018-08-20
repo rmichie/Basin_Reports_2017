@@ -4,6 +4,7 @@ params:
  report_title:
  report_subtitle:
  a.letter:
+ html_output: FALSE
 title: "`r params$report_title`"
 subtitle: "`r params$report_subtitle`"
 output:
@@ -25,15 +26,9 @@ always_allow_html: true
 ---
 
 
-------
-
-
-------
-
 ```{r global-setup, include=FALSE}
 
 library(knitr)
-library(kableExtra)
 knitr::opts_chunk$set(echo = FALSE,
                       message = FALSE,
                       warning=FALSE,
@@ -42,7 +37,7 @@ knitr::opts_chunk$set(echo = FALSE,
                       cache.comments = FALSE,
                       include = TRUE,
                       autodep = TRUE,
-                      fig.align = "center",
+                      fig.height = 6,
                       eval = TRUE)
 
 library(rgdal)
@@ -86,7 +81,7 @@ figs <- captioner(prefix=paste0("Figure ",params$a.letter,"-"), auto_space = FAL
 
 ```
 
-```{r basemap-html}
+```{r basemap-html, eval=params$html_output}
 
 library(leaflet)
 
@@ -198,14 +193,14 @@ landuse.huc8.df <- nlcd_huc8_df %>%
                                           VALUE_31,
                                           VALUE_95) * 0.001 / WsAreaSqKm * 100, 1))
 
-colnames(landuse.huc8.df) <- c("Subbasin", "Watershed Area (km2)", "%Urban/Roads", "%Forest", "%Cultivated"," %Range/Forest Disturbance", "%Other")
+colnames(landuse.huc8.df) <- c("Subbasin", "Watershed Area (km2)", "% Urban/Roads", "% Forest", "% Cultivated"," % Range/Forest Disturbance", " %Other")
 
-knitr::kable(landuse.huc8.df, padding = 2, digits = 1, caption = tbls(name="tbl.landuse_table", caption=paste0("2011 Land use and land cover for each subbasin in the ",owrd_basin,".")))
+knitr::kable(landuse.huc8.df, format = "pandoc", padding = 2, digits = 1, caption = tbls(name="tbl.landuse_table", caption=paste0("2011 Land use and land cover for each subbasin in the ",owrd_basin,".")))
 
 ```
 
 
-```{r, lancover-map, fig.cap=figs(name="figs.landcover_map",caption=paste0("Landuse in the the ",owrd_basin," administrative basin."))}
+```{r lancover-map, fig.cap=figs(name="figs.landcover_map",caption=paste0("Landuse in the the ",owrd_basin," administrative basin."))}
 
 knitr::include_graphics(path = gsub(" ", "", paste0("pictures/Landcover_",owrd_basin,".png"), fixed = TRUE))
 
@@ -222,7 +217,7 @@ bc.df <- bc.df[bc.df$owrd_basin %in% owrd_basin,c("admin_area", "bc.info")]
 
 colnames(bc.df) <- c('Administrative Area', 'DEQ Basin Coordinator')
 
-knitr::kable(bc.df, padding = 2, digits = 1, caption = tbls(name = "tbl.basin_contact", caption="Oregon DEQ basin contact."))
+knitr::kable(bc.df, format = "pandoc", padding = 2, digits = 1, caption = tbls(name = "tbl.basin_contact", caption="Oregon DEQ basin contact."))
 
 ```
 
@@ -262,7 +257,7 @@ wqlim4.df <- wqlim4.df[,c("POLLUTANT","cat5","catab")]
 
 names(wqlim4.df) <- c("Parameter", "Segments without a TMDL", "Segments with a TMDL") 
 
-knitr::kable(wqlim4.df, padding = 2, caption = tbls(name="tbl.wql", caption="Number of impaired stream segments with and without a TMDL as identified in Oregon's 2012 Integrated Report and Assessment database"))
+knitr::kable(wqlim4.df, format = "pandoc", padding = 2, caption = tbls(name="tbl.wql", caption="Number of impaired stream segments with and without a TMDL as identified in Oregon's 2012 Integrated Report and Assessment database"))
 
 ```
 
@@ -300,7 +295,7 @@ The Water Quality Management Plan (WQMP) is the framework for TMDL implementatio
 ```{r TMDL-table, results="asis"}
 
 if(NROW(tmdls.df) > 0){
-  print(knitr::kable(tmdls.df2, padding = 2, caption = tbls(name="tbl.tmdls", caption=paste0("Approved TMDLs in the ",owrd_basin," Basin and the impairments addressed by those TMDLs."))))
+  print(knitr::kable(tmdls.df2, format = "pandoc", padding = 2, caption = tbls(name="tbl.tmdls", caption=paste0("Approved TMDLs in the ",owrd_basin," Basin and the impairments addressed by those TMDLs."))))
 }
 
 ```
@@ -363,12 +358,13 @@ Federal Section 319(h) funds are provided annually through the EPA to states for
 ```{r 319-tbl, results="asis"}
 
 if(projects.n > 0) {
-  print(knitr::kable(deq319.df, digits = 1, row.names=FALSE,
+  print(knitr::kable(deq319.df, format = "pandoc", digits = 1, row.names=FALSE,
                      caption = tbls(name="tbl.319_projects", 
                                     caption="Project outputs reported in 2017 for Section 319 pass through grants.")))
 }
 
 ```
+
 
 ```{r 319-picture, fig.cap=pix.cap}
 
@@ -377,6 +373,7 @@ if(NROW(pix.df) > 0){
 }
 
 ```
+
 
 ## Clean Water State Revolving Fund (CWSRF)
 
@@ -434,20 +431,22 @@ The Clean Water State Revolving Fund loan program provides below market rate loa
 ```{r CWSRF-tbl, results="asis"}
 
 if(projects.n > 0){
-  print(knitr::kable(deqCWSRF.df, padding = 2, digits = 1, row.names=FALSE,  
+  print(knitr::kable(deqCWSRF.df, format = "pandoc", padding = 2, digits = 1, row.names=FALSE,  
                caption=tbls(name="tbl.CWSRF_projects", 
                             caption="Nonpoint source related Clean Water State Revolving Fund project outputs reported in 2017.")))
 }
 
 ```
 
-```{r, CWSRF-picture, fig.cap=pix.cap}
+
+```{r CWSRF-picture, fig.cap=pix.cap}
 
 if(nrow(pix.df) > 0){
   knitr::include_graphics(path=paste0("pictures/",pix.seed.df$picture_file))
 }
 
 ```
+
 
 ## Source Water Protection Grants
 
@@ -495,6 +494,7 @@ if(projects.n <= 0){
 
 ```
 
+
 The Oregon Health Authority regulates drinking water under state law and the Safe Drinking Water Act and works cooperatively with DEQ on source water protection efforts. Using the Drinking Water Revolving Loan Fund, OHA funds Source Water Protection Grants (up to $30,000 per public water system) for source water protection activities, monitoring, and planning in Drinking Water Source Areas. In addition, loans are available for improving drinking water treatment, source water protection activities, or land acquisition in source areas. Oregon's Infrastructure Finance Authority is responsible for administering these projects. The loan fund set-asides also fund five Drinking Water Protection positions at DEQ that provide technical assistance to public water systems and communities while they develop and implement strategies that reduce the risk within the delineated source water areas. This section highlights the ongoing projects and the outputs and accomplishments reported to DEQ in 2017.
 
 `r txt.DWSRF`
@@ -503,14 +503,15 @@ The Oregon Health Authority regulates drinking water under state law and the Saf
 ```{r DWSRF-tbl, results="asis"}
 
 if(projects.n > 0){
-  print(knitr::kable(deqDWSRF.df, padding = 2, digits = 1, row.names=FALSE, 
+  print(knitr::kable(deqDWSRF.df, format = "pandoc", padding = 2, digits = 1, row.names=FALSE, 
                caption = tbls(name="tbl.DWSRF_projects", 
                               caption="Nonpoint source Safe Drinking Water State Revolving Fund projects and outputs for 2017.")))
   }
 
 ```
 
-```{r, DWSRF-picture, fig.cap=pix.cap}
+
+```{r DWSRF-picture, fig.cap=pix.cap}
 
 if(nrow(pix.df) > 0){
   knitr::include_graphics(path=paste0("pictures/",pix.seed.df$picture_file))
@@ -518,8 +519,8 @@ if(nrow(pix.df) > 0){
 
 ```
 
-## Drinking Water Provider Partnership Grants
 
+## Drinking Water Provider Partnership Grants
 
 ```{r DWPP-projects setup}
 
@@ -574,7 +575,7 @@ Oregon DEQ participates in the Drinking Water Providers Partnership (DWPP) with 
 ```{r DWPP-tbl, results="asis"}
 
 if(projects.n > 0){
-  print(knitr::kable(deqDWPP.df, padding = 2, digits = 1, row.names=FALSE,
+  print(knitr::kable(deqDWPP.df, format = "pandoc", padding = 2, digits = 1, row.names=FALSE,
                caption=tbls(name="tbl.DWPP_projects", 
                             caption = "Drinking Water Providers Partnership projects and outputs for 2017")))
   }
@@ -714,7 +715,7 @@ if(projects.n > 0){
 
 ```{r OWEB-projects-tbl, results="asis"}
 if(projects.n > 0){
-  print(knitr::kable(projects.df, padding = 2, digits = 1, row.names=FALSE, 
+  print(knitr::kable(projects.df, format = "pandoc", padding = 2, digits = 1, row.names=FALSE, 
                      caption = tbls(name="tbl.OWEB_projects", 
                                     caption="OWEB grant funded projects completed in 2016, the most recent year data is available in the OWEB OWRI database.")))
 }
@@ -741,7 +742,7 @@ TMDL implementation actions taken by Designated Management Agencies (DMAs) or th
 
 if(nrow(tmdl.imp.df) > 0){
   
-  print(knitr::kable(tmdl.imp.df, padding = 2, digits = 1, row.names=FALSE, 
+  print(knitr::kable(tmdl.imp.df, format = "pandoc", padding = 2, digits = 1, row.names=FALSE, 
                      caption = tbls(name="tbl.dma_projects", 
                                     caption="TMDL implementation activities reported in 2017 by Designated Management Agencies or third parties.")))
   
