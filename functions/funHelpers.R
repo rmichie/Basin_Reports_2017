@@ -1,4 +1,3 @@
-
 get.landuse <- function(nlcd_huc8_df, geo_unit, geo_unit_col, group_col) {
   # reclassess and summarizes landuse
   
@@ -277,6 +276,8 @@ get.OWRI.projects <- function(owri.mdb, huc8.names, complete.years) {
   Codes <- sqlFetch(channel,"ActivityTypeLUXActivityLUXTreatmentLU")
   Participant <- sqlFetch(channel, "Participant")
   ProjectInfo <- sqlFetch(channel, "ProjectInfo")
+  #Treatment <- sqlFetch(channel, "Treatment")
+  #TreatmentLU <- sqlFetch(channel, "TreatmentLU")
   Result <- sqlFetch(channel, "Result")
   ResultLU <- sqlFetch(channel, "ResultLU")
   close(channel)
@@ -292,6 +293,20 @@ get.OWRI.projects <- function(owri.mdb, huc8.names, complete.years) {
   
   # limit results table to projects in basin area
   result.df <- result.df[result.df$PROJNUM %in% unique(owri.df$PROJNUM),]
+  
+  # ----- ADD
+  # build treatment results table
+  #treatment.df <- merge(x=Treatment[,c("PROJNUM","TreatmentLUID")], y=TreatmentLU[,c("TreatmentLUID", "Treatment")], by="TreatmentLUID", all.x=TRUE)
+  
+  # limit results table to projects in basin area
+  #treatment.df <- treatment.df[treatment.df$PROJNUM %in% unique(owri.df$PROJNUM),]
+  
+  # Add treatments to each project. There are many results for a single project.
+  #owri.df.t <- merge(x=owri.df, y=treatment.df, by='PROJNUM', all.y=TRUE)
+  
+  # Add results to each project. There are many results for a single project.
+  #owri.df <- merge(x=owri.df.t, y=result.df, by='PROJNUM', all.y=TRUE)
+  # ----
   
   # Add results to each project. There are many results for a single project.
   owri.df <- merge(x=owri.df, y=result.df, by='PROJNUM', all.y=TRUE)
@@ -373,6 +388,279 @@ get.OWRI.projects <- function(owri.mdb, huc8.names, complete.years) {
   
 }
 
+get.OWRI.huc8.names.xls <-function(owri.xls, complete.years) {
+  # Retreives the huc8 names from the OWRI database for various completion years.
+  
+  # owri.mdb <- the path and name of the OWRI database in mdb format
+  # complete.years <- vector of years to query cooresponding to the project completion year
+  
+  # Ryan Michie
+  
+  # --- Load required packages  -----------------
+  #library(RODBC)
+  
+  options(stringsAsFactors = FALSE)
+  
+  # --- Read OWRI data from access database -----------------
+  
+  # I'm keeping the dataframes the same name that OWEB uses
+  # channel <-odbcConnectAccess2007(owri.mdb)
+  # ProjectInfo <- sqlFetch(channel, "ProjectInfo")
+  # close(channel)
+  
+  ProjectInfo$SubbasinActual <- as.character(ProjectInfo$SubbasinActual)
+  
+  # get all the unique huc8 names
+  owri.huc8.names <- unique(ProjectInfo[ProjectInfo$CompleteYear %in% complete.years,]$SubbasinActual)
+  
+  return(owri.huc8.names)
+  
+}
+
+get.OWRI.costs.xls <- function(owri.xls, huc8.names, complete.years) {
+  # Retreives OWRI project data and returns a data frame with the cash, inkind, and total budget
+  # for each Subasin, and Activity Type.
+  
+  # owri.mdb <- the path and name of the OWRI database in mdb format
+  # huc8.names <- vector of huc8 names to query projects
+  # complete.years <- vector of years to query cooresponding to the project completion year
+  # cost.plot <- path and file name of where to save the cost bar chart
+  
+  # Ryan Michie
+  
+  # -- For Testing Start ----
+  # owri.mdb <- owri.db
+  # huc8.names <- huc8.name
+  # complete.years <- my.year
+  # -- For Testing End ----
+  
+  # --- Load required packages  -----------------
+  library(RODBC)
+  library(dplyr)
+  library(tidyr)
+  
+  options(stringsAsFactors = FALSE)
+  
+  # --- Read OWRI data from access database -----------------
+  
+  # I'm keeping the dataframes the same name that OWEB uses
+  # channel <-odbcConnectAccess2007(owri.mdb)
+  # ActivityCost <- sqlFetch(channel, "ActivityCost")
+  # Codes <- sqlFetch(channel,"ActivityTypeLUXActivityLUXTreatmentLU")
+  # ProjectInfo <- sqlFetch(channel, "ProjectInfo")
+  # Result <- sqlFetch(channel, "Result")
+  # ResultLU <- sqlFetch(channel, "ResultLU")
+  # close(channel)
+  
+  # --- Get project info -----------------
+  
+  owri.df <- ProjectInfo %>% 
+    filter(CompleteYear %in% complete.years & SubbasinActual %in% huc8.names) %>%
+    dplyr::select(PROJNUM, ProjName, drvdProjDesc, SubbasinActual)
+  
+  # build results table
+  # result.df <- merge(x=Result[,c("PROJNUM","ActivityTypeLUID","Quantity","ResultLUID")], y=ResultLU[,c("ResultLUID", "Result")], by="ResultLUID", all.x=TRUE)
+  
+  # limit results table to projects in basin area
+  result.df <- Result[Result$PROJNUM %in% unique(owri.df$PROJNUM),]
+  
+  # Add results to each project. There are many results for a single project.
+  owri.df <- merge(x=owri.df, y=result.df, by='PROJNUM', all.y=TRUE)
+  
+  # This keeps the numerics from having endless precision when converting to character.
+  owri.df$Quantity <- round(owri.df$Quantity,2)
+  
+  owri.df2 <- owri.df %>%
+    unite(col="result2",c("Quantity","Result"), sep = " ", remove=FALSE) %>% 
+    dplyr::select(Result=result2, PROJNUM, ProjName, SubbasinActual, ActivityTypeLUID, ActivityType, drvdProjDesc) %>%
+    group_by(PROJNUM, ProjName, SubbasinActual, drvdProjDesc, ActivityTypeLUID) %>%
+    summarise(Result = paste(Result, collapse = ", "))
+  
+  # fix result text
+  owri.df2$Result <- gsub(owri.df2$Result, pattern="Total ", replacement="")
+  owri.df2$Result <- gsub(owri.df2$Result, pattern="number of ", replacement="")
+  owri.df2$Result <- tolower(owri.df2$Result)
+  
+  # Add in Activity Type
+  #owri.df2 <- merge(owri.df2, y=unique(Codes[,c("ActivityTypeLUID", "ActivityType")]), by="ActivityTypeLUID", all.x=TRUE)
+  
+  # --- Add cost info  ----
+  owri.df3 <- merge(x=owri.df2, y=ActivityCost[,c("PROJNUM","ActivityTypeLUID", "ActivityType","Cash","InKind")], by=c("PROJNUM","ActivityTypeLUID"), all.x=TRUE)
+  #remove $ and , from Cash column, set as numeric
+  owri.df3$Cash<-as.numeric(gsub("[\\$,]", "", owri.df3$Cash))
+  #remove $ and , from InKind column, set as numeric
+  owri.df3$InKind<-as.numeric(gsub("[\\$,]", "", owri.df3$InKind))
+  # aggregate cost by activity
+  owri.df4 <- owri.df3 %>%
+    dplyr::select(SubbasinActual, ActivityType, Cash, InKind) %>%
+    group_by(SubbasinActual, ActivityType) %>%
+    summarise(TotalCash = sum(Cash),
+              TotalInKind = sum(InKind),
+              Total = sum(TotalCash, TotalInKind))
+  
+  return(owri.df4)
+  
+}
+
+get.OWRI.projects.xls <- function(owri.xls, huc8.names, complete.years) {
+  # Retreives and formats OWRI project data and returns a data frame where each row
+  # describes a single project. The project attributes include:
+  # Subasin, Project Name, Activity Type/s, Project Description, All participants, all reported results.
+  
+  # owri.mdb <- the path and name of the OWRI database in mdb format
+  # huc8.names <- vector of huc8 names to query projects
+  # complete.years <- vector of years to query cooresponding to the project completion year
+  
+  # Ryan Michie
+  
+  # -- For Testing Start ----
+  #owri.mdb <- owri.db
+  #huc8.names <- huc8.name
+  #complete.years <- my.year
+  # -- For Testing End ----
+  
+  # --- Load required packages  -----------------
+  library(dplyr)
+  library(tidyr)
+  library(ggplot2)
+  library(scales)
+  library(textstem)
+  
+  options(stringsAsFactors = FALSE)
+  
+  # --- Read OWRI data from access database -----------------
+  
+  # I'm keeping the dataframes the same name that OWEB uses
+  # channel <-odbcConnectAccess2007(owri.mdb)
+  # ActivityCost <- sqlFetch(channel, "ActivityCost")
+  # Codes <- sqlFetch(channel,"ActivityTypeLUXActivityLUXTreatmentLU")
+  # Participant <- sqlFetch(channel, "Participant")
+  # ProjectInfo <- sqlFetch(channel, "ProjectInfo")
+  # #Treatment <- sqlFetch(channel, "Treatment")
+  # #TreatmentLU <- sqlFetch(channel, "TreatmentLU")
+  # Result <- sqlFetch(channel, "Result")
+  # ResultLU <- sqlFetch(channel, "ResultLU")
+  # close(channel)
+  
+  
+  
+  # --- Get project info -----------------
+  #for testing ec 4/25/19
+  # complete.years=2017
+  # huc8.names<-huc8.name
+  # result.df<-Result
+  
+  owri.df <- ProjectInfo %>% 
+    filter(CompleteYear %in% complete.years & SubbasinActual %in% huc8.names) %>%
+    dplyr::select(PROJNUM, ProjName, drvdProjDesc, SubbasinActual)
+  
+  # build results table
+  # result.df <- merge(x=Result[,c("PROJNUM","ActivityTypeLUID","Quantity","ResultLUID")], y=ResultLU[,c("ResultLUID", "Result")], by="ResultLUID", all.x=TRUE)
+  
+  
+  # limit results table to projects in basin area
+  result.df <- Result[Result$PROJNUM %in% unique(owri.df$PROJNUM),]
+  
+  # ----- ADD
+  # build treatment results table
+  #treatment.df <- merge(x=Treatment[,c("PROJNUM","TreatmentLUID")], y=TreatmentLU[,c("TreatmentLUID", "Treatment")], by="TreatmentLUID", all.x=TRUE)
+  
+  # limit results table to projects in basin area
+  #treatment.df <- treatment.df[treatment.df$PROJNUM %in% unique(owri.df$PROJNUM),]
+  
+  # Add treatments to each project. There are many results for a single project.
+  #owri.df.t <- merge(x=owri.df, y=treatment.df, by='PROJNUM', all.y=TRUE)
+  
+  # Add results to each project. There are many results for a single project.
+  #owri.df <- merge(x=owri.df.t, y=result.df, by='PROJNUM', all.y=TRUE)
+  # ----
+  
+  # Add results to each project. There are many results for a single project.
+  owri.df <- merge(x=owri.df, y=result.df, by='PROJNUM', all.y=TRUE)
+  
+  # This keeps the numerics from having endless precision when converting to character.
+  owri.df$Quantity <- round(owri.df$Quantity,2)
+  
+  # Make certain words singular when there is only one unit implemented
+  owri.df$Result <- ifelse(owri.df$Quantity==1, gsub(owri.df$Result, pattern="crossings ", replacement="crossing "), owri.df$Result)
+  owri.df$Result <- ifelse(owri.df$Quantity==1, gsub(owri.df$Result, pattern="acres ", replacement="acre "), owri.df$Result)
+  owri.df$Result <- ifelse(owri.df$Quantity==1, gsub(owri.df$Result, pattern="pools ", replacement="pool "), owri.df$Result)
+  owri.df$Result <- ifelse(owri.df$Quantity==1, gsub(owri.df$Result, pattern="Miles ", replacement="Mile "), owri.df$Result)
+  owri.df$Result <- ifelse(owri.df$Quantity==1, gsub(owri.df$Result, pattern="miles ", replacement="mile "), owri.df$Result)
+  owri.df$Result <- ifelse(owri.df$Quantity==1, gsub(owri.df$Result, pattern="stations ", replacement="station "), owri.df$Result)
+  
+  owri.df2 <- owri.df %>%
+    unite(col="result2",c("Quantity","Result"), sep = " ", remove=FALSE) %>% 
+    dplyr::select(Result=result2, PROJNUM, ProjName, SubbasinActual, ActivityTypeLUID, ActivityType, drvdProjDesc) %>%
+    group_by(PROJNUM, ProjName, SubbasinActual, drvdProjDesc, ActivityTypeLUID, ActivityType) %>%
+    summarise(Result = paste(Result, collapse = ", "))
+  
+  # fix result text
+  owri.df2$Result <- gsub(owri.df2$Result, pattern="Total ", replacement="")
+  owri.df2$Result <- gsub(owri.df2$Result, pattern="number of ", replacement="")
+  owri.df2$Result <- tolower(owri.df2$Result)
+  
+  # Add in Activity Type
+  #owri.df2 <- merge(owri.df2, y=unique(Codes[,c("ActivityTypeLUID", "ActivityType")]), by="ActivityTypeLUID", all.x=TRUE)
+  
+  # --- Bring in participants  -----------------
+  
+  # Fix participant records
+  Participant$Participant[Participant$Participant == "OWEB "] <- "OWEB"
+  Participant$Participant[Participant$Participant == "USFWS "] <- "USFWS"
+  Participant$Participant[Participant$Participant == "Metro "] <- "Metro"
+  Participant$Participant[Participant$Participant == "Private Landowner"] <- "Private Landowners"
+  Participant$Participant[Participant$Participant == "Private Landowner (neighbor/contributor)"] <- "Private Landowners"
+  Participant$Participant[Participant$Participant == "Private Landowners (multiple)"] <- "Private Landowners"
+  Participant$Participant[Participant$Participant == "volunteers"] <- "Volunteers"
+  Participant$Participant[Participant$Participant == "volunteers: Calapooia Watershed volunteers"] <- "Volunteers"
+  Participant$Participant[Participant$Participant == "volunteers: community"] <- "Volunteers"
+  Participant$Participant[Participant$Participant == "volunteers: students and community"] <- "Volunteers"
+  Participant$Participant[Participant$Participant == "Private Citizen"] <- "Volunteers"
+  Participant$Participant[Participant$Participant == "Northwest Youth Corps "] <- "Northwest Youth Corps"
+  Participant$Participant[Participant$Participant == "Oregon State University Environmental Conservation  (Geo 300) Class"] <- "Oregon State University"
+  Participant$Participant[Participant$Participant == "Oregon State University Geo 300 class"] <- "Oregon State University"
+  Participant$Participant[Participant$Participant == "Springfield Public Schools "] <- "Springfield Public Schools"
+  Participant$Participant[Participant$Participant == "volunteers: Santiam Wilderness Academy"] <- "Santiam Wilderness Academy"
+  
+  # limit to just projects in basin area
+  partic.df <- Participant[Participant$PROJNUM %in% unique(owri.df$PROJNUM),]
+  
+  #owri.df3 <- merge(x=owri.dfxx, y=partic.df[,c("PROJNUM", "Participant")], by='PROJNUM', all.y=TRUE)
+  owri.df3 <- merge(x=owri.df2, y=partic.df[,c("PROJNUM", "Participant")], by='PROJNUM', all.y=TRUE)
+  
+  owri.df4p <- owri.df3 %>%
+    dplyr::select(PROJNUM, ProjName, SubbasinActual, ActivityTypeLUID, ActivityType, drvdProjDesc, Participant, Result) %>%
+    group_by(PROJNUM, ProjName, SubbasinActual, drvdProjDesc, ActivityTypeLUID, ActivityType, Result) %>%
+    summarise(Participants = paste(sort(unique(Participant)), collapse = ", ")) %>%
+    as.data.frame() %>%
+    dplyr::select(PROJNUM, ProjName, SubbasinActual, ActivityTypeLUID, ActivityType, drvdProjDesc, Participants, Result)
+  
+  # --- Add cost info  ----
+  owri.df5p <- merge(x=owri.df4p, y=ActivityCost[,c("PROJNUM","ActivityTypeLUID","Cash","InKind")], by=c("PROJNUM","ActivityTypeLUID"), all.x=TRUE)
+  #remove row if CASH=NA EC 04302019
+  owri.df5p <- owri.df5p[!is.na(owri.df5p$Cash),]
+  
+  #remove $ and , from Cash column, set as numeric
+  owri.df5p$Cash<-as.numeric(gsub("[\\$,]", "", owri.df5p$Cash))
+  #remove $ and , from InKind column, set as numeric
+  owri.df5p$InKind<-as.numeric(gsub("[\\$,]", "", owri.df5p$InKind))
+  
+  # combine participants, ActivityType, Results, and Cash/InKind
+  owri.df6p <- owri.df5p %>%
+    dplyr::select(PROJNUM, ProjName, SubbasinActual, ActivityType, drvdProjDesc, Cash, InKind, Participants, Result) %>%
+    group_by(PROJNUM, ProjName, SubbasinActual, drvdProjDesc, Participants) %>%
+    summarise(ActivityTypes = paste(unique(ActivityType), collapse = ", "),
+              TotalCash = sum(Cash),
+              TotalInKind = sum(InKind),
+              Total = sum(TotalCash, TotalInKind),
+              Results = paste(unique(Result), collapse = ", ")) %>%
+    as.data.frame() %>%
+    dplyr::select(ProjName, SubbasinActual, ActivityTypes, drvdProjDesc, Participants, Total, TotalCash, TotalInKind, Results)
+  
+  return(owri.df6p)
+}
+
 get.wqst.summary <- function(huc8.list, df.dir) {
   
   huc8.list <- huc8.df$HUC_8
@@ -402,7 +690,6 @@ get.wqst.summary <- function(huc8.list, df.dir) {
   return(wqst.list)
   
 }
-
 
 s <- function(x) {
   # function to return s if a noun is plural given the count of x
