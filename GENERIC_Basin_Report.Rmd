@@ -1,25 +1,25 @@
 ---
 params:
- owrd_basin: Basin Name
- report_title:
- report_subtitle:
+ owrd_basin: "BASIN NAME"
+ report_title: "TITLE"
+ report_subtitle: "SUBTITLE"
  a.letter:
  html_output: FALSE
 title: "`r params$report_title`"
 subtitle: "`r params$report_subtitle`"
 output:
+  word_document:
+    reference_docx: C:/Basin_Reports_2018/word_basin_report_template_style.docx
+    toc: FALSE
+    fig_caption: true
   html_document:
-    css: Y:\NPS_Annual_Reports\2017\Basin_Reports_2017\html_basin_report_template_style.css
+    # css: Y:\NPS_Annual_Reports\2018\Basin_Reports_2018\html_basin_report_template_style.css
     fig_caption: true
     mode: selfcontained
     number_sections: true
     toc: true
     toc_depth: 4
     toc_float: true
-  word_document:
-    reference_docx: \\deqhq1\WQNPS\NPS_Annual_Reports\2017\Basin_Reports_2017\word_basin_report_template_style.docx
-    toc: false
-    fig_caption: true
   pdf_document:
     fig_caption: true
 always_allow_html: true
@@ -38,7 +38,8 @@ knitr::opts_chunk$set(echo = FALSE,
                       include = TRUE,
                       autodep = TRUE,
                       fig.height = 6,
-                      eval = TRUE)
+                      eval = TRUE
+                      )
 
 library(rgdal)
 library(captioner)
@@ -46,12 +47,17 @@ library(readxl)
 library(dplyr)
 library(tidyr)
 library(scales)
+library(stringr)
 
-setwd("//deqhq1/WQNPS/NPS_Annual_Reports/2017/Basin_Reports_2017/")
+# Requires use of 32 bit R and 32 bit compatible RStudio Desktop (version 1.1.463)
+library(DBI)
+library(odbc)
+
+setwd("C:/Basin_Reports_2018/")
 
 source("functions/funHelpers.R")
 wqst.dir <- "//deqhq1/WQNPS/NPS_Annual_Reports/2017/R_NPS_WQStatusAndTrend/R_Outputs/WQSandT_tables/"
-owri.db <- "//deqhq1/WQNPS/NPS_Annual_Reports/2017/OWRI_1995_2016/OwriDbExport_010918.mdb"
+owri.db <- "//deqhq1/WQNPS/NPS_Annual_Reports/2018/OWRI_1995_2017/OwriDbExport_122618.mdb"
 lu_dir <- "lookup_tables"
 
 owrd_basin <- params$owrd_basin
@@ -60,7 +66,7 @@ owrd_basin <- params$owrd_basin
 set.seed(99) # Willamette
 
 # project completion year
-my.year <- 2016
+my.year <- 2017
 
 options(stringsAsFactors = FALSE)
 
@@ -76,12 +82,12 @@ huc8.name <- unique(huc8.df$HU_8_NAME)
 pix.df <- data.frame(picture=character(0),picture_caption=character(0),picture_file=character(0))
 pix.seed.df <- data.frame(picture_caption=c(NA),picture_file=c(NA))
 
-tbls  <- captioner(prefix=paste0("Table ",params$a.letter,"-"), auto_space = FALSE)
+tbls <- captioner(prefix=paste0("Table ",params$a.letter,"-"), auto_space = FALSE)
 figs <- captioner(prefix=paste0("Figure ",params$a.letter,"-"), auto_space = FALSE)
 
 ```
 
-```{r basemap-html, eval=params$html_output}
+```{r basemap-html, eval=FALSE}
 
 library(leaflet)
 
@@ -200,9 +206,11 @@ knitr::kable(landuse.huc8.df, format = "pandoc", padding = 2, digits = 1, captio
 ```
 
 
-```{r lancover-map, fig.cap=figs(name="figs.landcover_map",caption=paste0("Landuse in the the ",owrd_basin," administrative basin."))}
+```{r lancover-map,eval.after="fig.cap", fig.cap=landmap.cap}
+landmap.cap<-figs(name="figs.landcover_map",caption=paste0("Land use in the ",owrd_basin," administrative basin."))
 
 knitr::include_graphics(path = gsub(" ", "", paste0("pictures/Landcover_",owrd_basin,".png"), fixed = TRUE))
+
 
 ```
 
@@ -226,38 +234,55 @@ knitr::kable(bc.df, format = "pandoc", padding = 2, digits = 1, caption = tbls(n
 
 ## Water Quality Impaired Stream Segments
 
-Under section 303(d) of the Clean Water Act, states, territories and authorized tribes must submit lists of impaired waters. Impaired waters are those that do not attain water quality standards or support all designated uses. The law requires that states establish priority rankings for waters on the lists and develop Total Maximum Daily Loads (TMDLs) for these waters. `r tbls(name='tbl.wql', display='cite')` identifies the number of `r owrd_basin` Basin waterbody segments impaired by parameter from the 2012 Integrated Report and and the number of segments with approved TMDLs. Sources: [ODEQ](http://www.oregon.gov/deq/wq/Pages/WQ-Assessment.aspx), [USEPA](https://www.epa.gov/tmdl/program-overview-303d-listing-impaired-waters)
+Under section 303(d) of the Clean Water Act, states, territories and authorized tribes must submit lists of impaired waters. Impaired waters are those that do not attain water quality standards or support all designated uses. The law requires that states establish priority rankings for waters on the lists and develop Total Maximum Daily Loads (TMDLs) for these waters. `r tbls(name='tbl.wql', display='cite')` identifies the number of `r owrd_basin` Basin waterbody segments impaired by parameter from the 2012 Integrated Report and the number of segments with approved TMDLs. Sources: [ODEQ](http://www.oregon.gov/deq/wq/Pages/WQ-Assessment.aspx), [USEPA](https://www.epa.gov/tmdl/program-overview-303d-listing-impaired-waters)
 
 
 ```{r wq-limited}
 
 # Read the wq limited feature classes
-wqlim_streams_shp <- readOGR(dsn=lu_dir,layer="2012_wqlim_streams", integer64="warn.loss", verbose=FALSE)
-wqlim_lakes_shp <- readOGR(dsn=lu_dir,layer="2012_wqlim_lakes", integer64="warn.loss", verbose=FALSE)
+# wqlim_streams_shp <- readOGR(dsn=lu_dir,layer="2012_wqlim_streams", integer64="warn.loss", verbose=FALSE)
+# wqlim_lakes_shp <- readOGR(dsn=lu_dir,layer="2012_wqlim_lakes", integer64="warn.loss", verbose=FALSE)
+# 
+# wqlim1.df <- wqlim_streams_shp@data
+# wqlim2.df <- wqlim_lakes_shp@data
+# wqlim2.df <- wqlim2.df[,match(names(wqlim1.df), names(wqlim2.df))]
+# 
+# wqlim3.df <- rbind(wqlim1.df, wqlim2.df)
 
-wqlim1.df <- wqlim_streams_shp@data
-wqlim2.df <- wqlim_lakes_shp@data
-wqlim2.df <- wqlim2.df[,match(names(wqlim1.df), names(wqlim2.df))]
+# wqlim4.df <- wqlim3.df %>% 
+#   filter(OWRD_BAS == owrd_basin & STATUS_ID %in% c(3, 17 ,4, 14, 15)) %>%
+#   dplyr::select(POLLUTANT, STATUS_ID) %>%
+#   mutate(STATUS_ID=replace(STATUS_ID, STATUS_ID %in% c(3, 17), "cat5"),
+#          STATUS_ID=replace(STATUS_ID, STATUS_ID %in% c(4, 14, 15), "catab")) %>%
+#   count(POLLUTANT, STATUS_ID) %>%
+#   group_by(POLLUTANT) %>%
+#   spread(STATUS_ID, n, fill = 0)
 
-wqlim3.df <- rbind(wqlim1.df, wqlim2.df)
+#Code update to reflect wq limited streams and lakes approved by EPA in 2018. 4/24/19 EC
+wqlim.df<-read.csv("C:/Basin_Reports_2018/lookup_tables/2012_wqlim_04222019.csv", header=TRUE)
+owrdBasin_lu<-read.csv("C:/Basin_Reports_2018/lookup_tables/OWRD_Basins.csv", header=TRUE)
 
-wqlim4.df <- wqlim3.df %>% 
-  filter(OWRD_BAS == owrd_basin & STATUS_ID %in% c(3, 17 ,4, 14, 15)) %>%
-  dplyr::select(POLLUTANT, STATUS_ID) %>%
-  mutate(STATUS_ID=replace(STATUS_ID, STATUS_ID %in% c(3, 17), "cat5"),
-         STATUS_ID=replace(STATUS_ID, STATUS_ID %in% c(4, 14, 15), "catab")) %>%
-  count(POLLUTANT, STATUS_ID) %>%
-  group_by(POLLUTANT) %>%
-  spread(STATUS_ID, n, fill = 0)
+names(wqlim.df)[names(wqlim.df) == 'USGS.4th.Field.HUC'] <- 'HUC_8'
 
-if(!("cat5" %in% colnames(wqlim4.df))) {wqlim4.df$cat5 <- 0}
-if(!("catab" %in% colnames(wqlim4.df))) {wqlim4.df$catab <- 0}
+wqlim.df<-merge(x=wqlim.df, y=owrdBasin_lu, by="HUC_8", all.x=TRUE)
 
-wqlim4.df <- wqlim4.df[,c("POLLUTANT","cat5","catab")]
+wqlim5.df <- wqlim.df %>% 
+  filter(OWRD_BAS == owrd_basin & Status %in% c("Cat 4A: Water quality limited, TMDL approved", "Cat 4B: Water quality limited, other control measures" ,"Cat 5: Water quality limited, 303(d) list, TMDL needed")) %>%
+  dplyr::select(Parameter, Status) %>%
+  mutate(Status=replace(Status, Status %in% c("Cat 5: Water quality limited, 303(d) list, TMDL needed"), "cat5"),
+         Status=replace(Status, Status %in% c("Cat 4A: Water quality limited, TMDL approved", "Cat 4B: Water quality limited, other control measures"), "catab")) %>%
+  count(Parameter, Status) %>%
+  group_by(Parameter) %>%
+  spread(Status, n, fill = 0)
 
-names(wqlim4.df) <- c("Parameter", "Segments without a TMDL", "Segments with a TMDL") 
+if(!("cat5" %in% colnames(wqlim5.df))) {wqlim5.df$cat5 <- 0}
+if(!("catab" %in% colnames(wqlim5.df))) {wqlim5.df$catab <- 0}
 
-knitr::kable(wqlim4.df, format = "pandoc", padding = 2, caption = tbls(name="tbl.wql", caption="Number of impaired stream segments with and without a TMDL as identified in Oregon's 2012 Integrated Report and Assessment database"))
+wqlim5.df <- wqlim5.df[,c("Parameter","cat5","catab")]
+
+names(wqlim5.df) <- c("Parameter", "Segments without a TMDL", "Segments with a TMDL") 
+
+knitr::kable(wqlim5.df, format = "pandoc", padding = 2, caption = tbls(name="tbl.wql", caption="Number of impaired stream segments with and without a TMDL as identified in Oregon's 2012 Integrated Report and Assessment database."))
 
 ```
 
@@ -318,14 +343,14 @@ pix.cap <- NULL
 
 if(projects.n <= 0){
   
-  txt.319 <-paste0("In 2017 there were no 319 projects with reported outputs in the ",owrd_basin,".")
+  txt.319 <-paste0("In 2018 there were no 319 projects with reported outputs in the ",owrd_basin,".")
   
   } else {
     
     projects.budget <- dollar(sum(as.numeric(projects.df[projects.df$owrd_basin %in% owrd_basin & 
                                                      projects.df$fund_program == program, c("budget")]$budget)))
     
-    txt.319 <- paste0("In 2017, there ",was.were(projects.n)," ",
+    txt.319 <- paste0("In 2018, there ",was.were(projects.n)," ",
                       numbers.to.words(projects.n),
                       " 319 project",s(projects.n),
                       " active that reported project outputs and accomplishments to DEQ. Combined the projects have a total grant budget of ",
@@ -350,7 +375,7 @@ if(projects.n <= 0){
 
 ```
 
-Federal Section 319(h) funds are provided annually through the EPA to states for the development and implementation of each state's Nonpoint Source Management Program. In Oregon a portion of 319 grant funding is "passed through" to support community or partner projects that address Oregon's nonpoint source program priorities. Generally, DEQ requires grantees to report annually on the progress made implementing their grant project. This section highlights those outputs and accomplishments reported to DEQ in 2017. Note this section does not identify or include projects proposed and awarded a grant in 2017. Outputs and accomplishments for those projects will be reported to DEQ in future years once they have been implemented. For a listing of projects proposed and awarded a grant in 2017 see Section 3.6.2 of the main report.
+Federal Section 319(h) funds are provided annually through the EPA to states for the development and implementation of each state's Nonpoint Source Management Program. In Oregon a portion of 319 grant funding is "passed through" to support community or partner projects that address Oregon's nonpoint source program priorities. Generally, DEQ requires grantees to report annually on the progress made implementing their grant project. This section highlights those outputs and accomplishments reported to DEQ in 2018. Note this section does not identify or include projects proposed and awarded a grant in 2018. Outputs and accomplishments for those projects will be reported to DEQ in future years once they have been implemented. For a listing of projects proposed and awarded a grant in 2018 see Section 3.6.2 of the main report.
 
 `r txt.319`
 
@@ -360,8 +385,10 @@ Federal Section 319(h) funds are provided annually through the EPA to states for
 if(projects.n > 0) {
   print(knitr::kable(deq319.df, format = "pandoc", digits = 1, row.names=FALSE,
                      caption = tbls(name="tbl.319_projects", 
-                                    caption="Project outputs reported in 2017 for Section 319 pass through grants.")))
-}
+                                    caption="Project outputs reported in 2018 for Section 319 pass through grants.")))
+}  
+
+
 
 ```
 
@@ -391,14 +418,14 @@ pix.cap <- NULL
 
 if(projects.n <= 0){
   
-  txt.CWSRF <-paste0("In 2017 there were no nonpoint source related Clean Water State Revolving Fund projects with reported outputs in the ",owrd_basin,".")
+  txt.CWSRF <-paste0("In 2018 there were no nonpoint source related Clean Water State Revolving Fund projects with reported outputs in the ",owrd_basin,".")
 
   } else {
     
     projects.budget <- dollar(sum(as.numeric(projects.df[projects.df$owrd_basin %in% owrd_basin & 
                                                      projects.df$fund_program == program, c("budget")]$budget)))
     
-    txt.CWSRF <- paste0("In 2017 there ",was.were(projects.n)," ",
+    txt.CWSRF <- paste0("In 2018 there ",was.were(projects.n)," ",
                       numbers.to.words(projects.n),
                       " nonpoint source related Clean Water State Revolving Fund project",s(projects.n),
                       " active that reported project outputs and accomplishments to DEQ. Combined the projects have a total budget of ",
@@ -423,7 +450,7 @@ if(projects.n <= 0){
 ```
 
 
-The Clean Water State Revolving Fund loan program provides below market rate loans to public agencies for the planning, design and construction of various projects that prevent or mitigate water pollution. Eligible agencies include federally recognized Indian tribal governments, cities, counties, sanitary districts, soil and water conservation districts, irrigation districts, various special districts and intergovernmental entities. DEQ partners with Oregon communities to implement projects that attain and maintain water quality standards, and are necessary to protect beneficial uses. This section highlights the ongoing projects and the outputs and accomplishments reported to DEQ in 2017.
+The Clean Water State Revolving Fund loan program provides below market rate loans to public agencies for the planning, design and construction of various projects that prevent or mitigate water pollution. Eligible agencies include federally recognized Indian tribal governments, cities, counties, sanitary districts, soil and water conservation districts, irrigation districts, various special districts and intergovernmental entities. DEQ partners with Oregon communities to implement projects that attain and maintain water quality standards, and are necessary to protect beneficial uses. This section highlights the ongoing projects and the outputs and accomplishments reported to DEQ in 2018.
 
 `r txt.CWSRF`
 
@@ -433,7 +460,7 @@ The Clean Water State Revolving Fund loan program provides below market rate loa
 if(projects.n > 0){
   print(knitr::kable(deqCWSRF.df, format = "pandoc", padding = 2, digits = 1, row.names=FALSE,  
                caption=tbls(name="tbl.CWSRF_projects", 
-                            caption="Nonpoint source related Clean Water State Revolving Fund project outputs reported in 2017.")))
+                            caption="Nonpoint source related Clean Water State Revolving Fund project outputs reported in 2018.")))
 }
 
 ```
@@ -463,14 +490,14 @@ pix.cap <- NULL
 
 if(projects.n <= 0){
   
-  txt.DWSRF <-paste0("In 2017 there were no nonpoint source related Safe Drinking Water State Revolving Fund projects with reported outputs in the ",owrd_basin,".")
+  txt.DWSRF <-paste0("In 2018 there were no nonpoint source related Safe Drinking Water State Revolving Fund projects with reported outputs in the ",owrd_basin,".")
 
   } else {
     
     projects.budget <- dollar(sum(as.numeric(projects.df[projects.df$owrd_basin %in% owrd_basin & 
                                                      projects.df$fund_program == program, c("budget")]$budget)))
     
-    txt.DWSRF <- paste0("In 2017 there ",was.were(projects.n)," ",
+    txt.DWSRF <- paste0("In 2018 there ",was.were(projects.n)," ",
                       numbers.to.words(projects.n),
                       " nonpoint source related Safe Drinking Water State Revolving Fund project",s(projects.n),
                       " active that reported project outputs and accomplishments to DEQ. Combined the projects have a total budget of ",
@@ -495,7 +522,7 @@ if(projects.n <= 0){
 ```
 
 
-The Oregon Health Authority regulates drinking water under state law and the Safe Drinking Water Act and works cooperatively with DEQ on source water protection efforts. Using the Drinking Water Revolving Loan Fund, OHA funds Source Water Protection Grants (up to $30,000 per public water system) for source water protection activities, monitoring, and planning in Drinking Water Source Areas. In addition, loans are available for improving drinking water treatment, source water protection activities, or land acquisition in source areas. Oregon's Infrastructure Finance Authority is responsible for administering these projects. The loan fund set-asides also fund five Drinking Water Protection positions at DEQ that provide technical assistance to public water systems and communities while they develop and implement strategies that reduce the risk within the delineated source water areas. This section highlights the ongoing projects and the outputs and accomplishments reported to DEQ in 2017.
+The Oregon Health Authority regulates drinking water under state law and the Safe Drinking Water Act and works cooperatively with DEQ on source water protection efforts. Using the Drinking Water Revolving Loan Fund, OHA funds Source Water Protection Grants (up to $30,000 per public water system) for source water protection activities, monitoring, and planning in Drinking Water Source Areas. In addition, loans are available for improving drinking water treatment, source water protection activities, or land acquisition in source areas. Oregon's Infrastructure Finance Authority is responsible for administering these projects. The loan fund set-asides also fund five Drinking Water Protection positions at DEQ that provide technical assistance to public water systems and communities while they develop and implement strategies that reduce the risk within the delineated source water areas. This section highlights the ongoing projects and the outputs and accomplishments reported to DEQ in 2018.
 
 `r txt.DWSRF`
 
@@ -505,7 +532,7 @@ The Oregon Health Authority regulates drinking water under state law and the Saf
 if(projects.n > 0){
   print(knitr::kable(deqDWSRF.df, format = "pandoc", padding = 2, digits = 1, row.names=FALSE, 
                caption = tbls(name="tbl.DWSRF_projects", 
-                              caption="Nonpoint source Safe Drinking Water State Revolving Fund projects and outputs for 2017.")))
+                              caption="Nonpoint source Safe Drinking Water State Revolving Fund projects and outputs for 2018.")))
   }
 
 ```
@@ -535,14 +562,14 @@ pix.cap <- NULL
 
 if(projects.n <= 0){
   
-  txt.DWPP <-paste0("In 2017 there were no active Drinking Water Providers Partnership projects with reported outputs in the ",owrd_basin,".")
+  txt.DWPP <-paste0("In 2018 there were no active Drinking Water Providers Partnership projects with reported outputs in the ",owrd_basin,".")
 
   } else {
     
     projects.budget <- dollar(sum(as.numeric(projects.df[projects.df$owrd_basin %in% owrd_basin & 
                                                      projects.df$fund_program == program, c("budget")]$budget)))
     
-    txt.DWPP <- paste0("In 2017 there ",was.were(projects.n)," ",
+    txt.DWPP <- paste0("In 2018 there ",was.were(projects.n)," ",
                       numbers.to.words(projects.n),
                       " Drinking Water Providers Partnership project",s(projects.n),
                       " active that reported project outputs and accomplishments to te DWPP. Combined the projects have a total budget of ",
@@ -567,7 +594,7 @@ if(projects.n <= 0){
 ```
 
 
-Oregon DEQ participates in the Drinking Water Providers Partnership (DWPP) with USDA Forest Service Region 6, EPA Region 10, the U.S. Bureau of Land Management OR/WA Office, the Washington Department of Health, Geos Institute and WildEarth Guardians. Together, these partners coordinate a competitive grant solicitation and award program for environmental conservation and restoration projects in municipal watersheds across the Northwest. The Drinking Water Providers Partnership made the first of the annual awards in 2016 and most projects have a focus on nonpoint sources of pollution. The goal of the Partnership and the funding is to develop and support local partnerships to restore and protect the health of watersheds which communities depend upon for drinking water while also benefiting aquatic and riparian ecosystems, including the native fish that inhabit them. This section highlights the ongoing projects and the outputs and accomplishments reported to the DWPP in 2017.
+Oregon DEQ participates in the Drinking Water Providers Partnership (DWPP) with USDA Forest Service Region 6, EPA Region 10, the U.S. Bureau of Land Management OR/WA Office, the Washington Department of Health, Geos Institute and WildEarth Guardians. Together, these partners coordinate a competitive grant solicitation and award program for environmental conservation and restoration projects in municipal watersheds across the Northwest. The Drinking Water Providers Partnership made the first of the annual awards in 2016 and most projects have a focus on nonpoint sources of pollution. The goal of the Partnership and the funding is to develop and support local partnerships to restore and protect the health of watersheds which communities depend upon for drinking water while also benefiting aquatic and riparian ecosystems, including the native fish that inhabit them. This section highlights the ongoing projects and the outputs and accomplishments reported to the DWPP in 2018.
 
 `r txt.DWPP`
 
@@ -577,7 +604,7 @@ Oregon DEQ participates in the Drinking Water Providers Partnership (DWPP) with 
 if(projects.n > 0){
   print(knitr::kable(deqDWPP.df, format = "pandoc", padding = 2, digits = 1, row.names=FALSE,
                caption=tbls(name="tbl.DWPP_projects", 
-                            caption = "Drinking Water Providers Partnership projects and outputs for 2017")))
+                            caption = "Drinking Water Providers Partnership projects and outputs for 2018")))
   }
 
 ```
@@ -594,11 +621,319 @@ if(nrow(pix.df) > 0){
 
 ## OWEB Grant Funded Projects
 
+```{r OWRI-db-connection}
+
+options(stringsAsFactors = FALSE)
+
+# --- Read OWRI data from access database -----------------
+
+db_connect_string <- paste0("Driver={Microsoft Access Driver (*.mdb, *.accdb)};","DBQ=", owri.db)
+
+channel <- dbConnect(odbc::odbc(),.connection_string = db_connect_string)
+
+# I'm keeping the dataframes the same name that OWEB uses
+ActivityCost <- dbReadTable(channel, "ActivityCost")
+ActivityLU <- dbReadTable(channel, "ActivityLU")
+ActivityTypeLU <- dbReadTable(channel, "ActivityTypeLU")
+ProjectInfo <- dbReadTable(channel, "ProjectInfo")
+Treatment <- dbReadTable(channel, "Treatment")
+TreatmentLU <- dbReadTable(channel, "TreatmentLU")
+TreatmentMetric <- dbReadTable(channel, "TreatmentMetric")
+TreatmentMetricLU <- dbReadTable(channel, "TreatmentMetricLU")
+UnitLU <- dbReadTable(channel, "UnitLU")
+RiparianVtrRcr <- dbReadTable(channel, "RiparianVtrRcr")
+InstreamWaterRight <- dbReadTable(channel, "InstreamWaterRight")
+dbDisconnect(channel)
+
+
+```
+
+
+
+```{r OWRI-treatment-summary}
+
+# Rename some of the Treatment Metrics
+TreatmentMetricLU2 <- data.frame(TreatmentMetricLUID=c(1:8),
+                                 TreatmentMetric=c("Area treated",
+                                                   "Number of treatments",
+                                                   "Stream sides treated",
+                                                   "Volume",
+                                                   "Length of treatment",
+                                                   "Percent urban area affected",
+                                                   "Percent watershed area affected",
+                                                   "Volumetric flow rate"))
+
+# Select only some of the riparian treatment metrics
+RiparianVtrRcr2 <- RiparianVtrRcr %>%
+  dplyr::select(TreatmentID, mile=LengthMiles,acre=BestAcres,feet=WidthFeet) %>%
+  tidyr::gather(-TreatmentID, key="Unit",value="Quantity") %>%
+  mutate(UnitLUID=case_when(Unit == "mile" ~ 10,
+                            Unit == "acre" ~ 1,
+                            Unit == "feet" ~ 8))
+
+df.treatments <- Treatment %>%
+  dplyr::select(PROJNUM ,ActivityTypeLUID, ActivityLUID, TreatmentLUID, TreatmentID) %>%
+  dplyr::left_join(ActivityTypeLU[,c("ActivityTypeLUID", "ActivityType")], by="ActivityTypeLUID") %>%
+  dplyr::left_join(ActivityLU[,c("ActivityLUID", "Activity")], by="ActivityLUID") %>%
+  dplyr::left_join(TreatmentLU[,c("TreatmentLUID", "Treatment")], by="TreatmentLUID") %>%
+  dplyr::left_join(TreatmentMetric, by="TreatmentID") %>%
+  dplyr::left_join(TreatmentMetricLU2, by="TreatmentMetricLUID") %>%
+  dplyr::left_join(UnitLU, by="UnitLUID") %>%
+  dplyr::left_join(ProjectInfo, by="PROJNUM") %>%
+  dplyr::filter(CompleteYear %in% my.year & SubbasinActual %in% huc8.name)
+
+#-- Esturary ----
+
+tbl.estuary <- df.treatments %>%
+  dplyr::filter(ActivityType =="Estuary" & Unit == "acre") %>%
+  dplyr::mutate(Activity_Unit=paste0(Activity," (",str_to_title(Unit),"s)")) %>% 
+  dplyr::group_by(SubbasinActual, Activity_Unit) %>%
+  dplyr::summarise(Sum=sum(Quantity)) %>%
+  tidyr::spread(Activity_Unit, Sum) %>%
+  dplyr::rename(Subbasin=SubbasinActual)
+
+eval.estuary <- ifelse(NROW(tbl.estuary) > 0, TRUE, FALSE)
+
+#-- Fish Pasage ----
+
+tbl.fish1 <- df.treatments %>%
+  dplyr::filter(ActivityType =="Fish Passage" & TreatmentMetricLUID==2) %>%
+  dplyr::mutate(Activity_Unit=paste0(ActivityType," ",Activity," (",TreatmentMetric,")")) %>% 
+  dplyr::group_by(SubbasinActual, Activity_Unit) %>%
+  dplyr::summarise(Sum=sum(Quantity)) %>%
+  tidyr::spread(Activity_Unit,Sum)
+
+tbl.fish.final <- df.treatments %>%
+  dplyr::filter(ActivityType =="Fish Screening" & TreatmentMetricLUID==2) %>%
+  dplyr::mutate(Activity_Unit=paste0(Treatment," (",TreatmentMetric,")")) %>% 
+  #tidyr::unite(col="Activity_Unit", c("Activity", "Treatment", "Unit"), sep = ", ", remove=FALSE) %>% 
+  dplyr::group_by(SubbasinActual, Activity_Unit) %>%
+  dplyr::summarise(Sum=sum(Quantity)) %>%
+  tidyr::spread(Activity_Unit,Sum) %>%
+  dplyr::full_join(tbl.fish1, by="SubbasinActual") %>%
+  dplyr::rename(Subbasin=SubbasinActual)
+
+eval.fish <- ifelse(NROW(tbl.fish.final) > 0, TRUE, FALSE)
+
+#-- Instream ----
+
+
+tbl.instream1 <- df.treatments %>%
+  dplyr::filter(ActivityType =="Instream"
+                & Unit =="mile"
+                & Activity %in% c("Bank stabilization")) %>%
+  dplyr::mutate(Activity_Unit="Stream bank stabilized (Miles)") %>% 
+  dplyr::group_by(SubbasinActual, Activity_Unit) %>%
+  dplyr::summarise(Sum=sum(Quantity)) %>%
+  tidyr::spread(Activity_Unit,Sum)
+
+tbl.instream2 <- df.treatments %>%
+  dplyr::filter(ActivityType =="Instream"
+                & Activity %in% c("Animal species removal",
+                                  "Beaver introduction/encouragement")) %>%
+  dplyr::mutate(Activity_Unit=paste0(Treatment," (",TreatmentMetric,")")) %>% 
+  dplyr::group_by(SubbasinActual, Activity_Unit) %>%
+  dplyr::summarise(Sum=sum(Quantity)) %>%
+  tidyr::spread(Activity_Unit,Sum)
+
+
+tbl.instream3 <- df.treatments %>%
+  dplyr::filter(ActivityType =="Instream"
+                & !(Unit %in% c("main channel", "structure"))
+                & Activity %in% c("Channel alteration")) %>%
+  dplyr::mutate(TreatmentMetric=if_else(TreatmentMetric=="Length of treatment", "Feet", TreatmentMetric)) %>%
+  dplyr::mutate(Activity_Unit=paste0(Treatment," (",TreatmentMetric,")")) %>% 
+  dplyr::group_by(SubbasinActual, Activity_Unit) %>%
+  dplyr::summarise(Sum=sum(Quantity)) %>%
+  tidyr::spread(Activity_Unit,Sum)
+
+tbl.instream4 <- df.treatments %>%
+  dplyr::filter(ActivityType =="Instream"
+                & Activity %in% c("Engineered structures")) %>%
+  dplyr::mutate(Activity_Unit="Engineered structures installed (Number of treatments)") %>% 
+  dplyr::group_by(SubbasinActual, Activity_Unit) %>%
+  dplyr::summarise(Sum=sum(Quantity)) %>%
+  tidyr::spread(Activity_Unit,Sum)
+
+tbl.instream5 <- df.treatments %>%
+  dplyr::filter(ActivityType =="Instream"
+                & ActivityLUID %in% c(8:13)) %>%
+  dplyr::mutate(Activity=gsub(" *\\(.*?\\) *", "", Activity)) %>%
+  dplyr::mutate(Activity_Unit=paste0(Activity," (",TreatmentMetric,")")) %>% 
+  dplyr::group_by(SubbasinActual, Activity_Unit) %>%
+  dplyr::summarise(Sum=sum(Quantity)) %>%
+  tidyr::spread(Activity_Unit,Sum)
+
+tbl.instream6 <- df.treatments %>%
+  dplyr::filter(ActivityType =="Instream"
+                & Activity %in% c("Off-channel habitat")
+                & TreatmentMetricLUID %in% c(2)) %>%
+  dplyr::mutate(Activity_Unit=paste0("Off-channel habitat created, protected, or reconnected (",TreatmentMetric,")")) %>% 
+  dplyr::group_by(SubbasinActual, Activity_Unit) %>%
+  dplyr::summarise(Sum=sum(Quantity)) %>%
+  tidyr::spread(Activity_Unit,Sum)
+
+tbl.instream7 <- df.treatments %>%
+  dplyr::filter(ActivityType =="Instream"
+                & Activity %in% c("Other instream activity")
+                & TreatmentLUID %in% c(76)) %>%
+  dplyr::mutate(Activity_Unit=paste0(Treatment," (",TreatmentMetric,")")) %>% 
+  dplyr::group_by(SubbasinActual, Activity_Unit) %>%
+  dplyr::summarise(Sum=sum(Quantity)) %>%
+  tidyr::spread(Activity_Unit,Sum)
+
+tbl.instream8 <- df.treatments %>%
+  dplyr::filter(ActivityType =="Instream"
+                & Activity %in% c("Salmon carcass placement")
+                & Unit %in% c("pound", "mile")) %>%
+  dplyr::mutate(Unit=if_else(Unit=="mile", "Linear stream miles of treatment", "Pounds")) %>%
+  dplyr::mutate(Activity_Unit=paste0(Activity," (",Unit,")")) %>% 
+  dplyr::group_by(SubbasinActual, Activity_Unit) %>%
+  dplyr::summarise(Sum=sum(Quantity)) %>%
+  tidyr::spread(Activity_Unit,Sum)
+
+
+tbl.instream.final1 <- tbl.instream1 %>%
+  dplyr::full_join(tbl.instream3, by="SubbasinActual") %>%
+  dplyr::rename(Subbasin=SubbasinActual)
+
+tbl.instream.final2 <- tbl.instream2 %>%
+  dplyr::full_join(tbl.instream7, by="SubbasinActual") %>%
+  dplyr::full_join(tbl.instream8, by="SubbasinActual") %>%
+  dplyr::rename(Subbasin=SubbasinActual)
+
+tbl.instream.final3 <- tbl.instream4 %>%
+  dplyr::full_join(tbl.instream5, by="SubbasinActual") %>%
+  dplyr::full_join(tbl.instream6, by="SubbasinActual") %>%
+  dplyr::rename(Subbasin=SubbasinActual)
+
+eval.instream1 <- ifelse(NROW(tbl.instream.final1) > 0, TRUE, FALSE)
+eval.instream2 <- ifelse(NROW(tbl.instream.final2) > 0, TRUE, FALSE)
+eval.instream3 <- ifelse(NROW(tbl.instream.final3) > 0, TRUE, FALSE)
+
+#-- Instream Flow ----
+
+tbl.flow <- df.treatments %>%
+  dplyr::filter(ActivityType =="Instream Flow"
+                & !(is.na(Unit))) %>%
+  dplyr::mutate(Activity_Unit=paste0(Treatment, " (",Unit,")")) %>% 
+  dplyr::group_by(SubbasinActual, Activity_Unit) %>%
+  dplyr::summarise(Sum=sum(Quantity)) %>%
+  tidyr::spread(Activity_Unit,Sum)
+
+eval.flow <- ifelse(NROW(tbl.flow) > 0, TRUE, FALSE)
+
+#-- Riparian Planting and Tree Retention -----
+
+# Voluntary Riparian Tree Retention
+tbl.rip1<- df.treatments %>%
+  dplyr::select(-Unit,-UnitLUID,-Quantity) %>%
+  dplyr::left_join(RiparianVtrRcr2, by="TreatmentID") %>%
+  dplyr::filter(ActivityType =="Riparian" & 
+                  Activity %in% c("Voluntary riparian tree retention") & 
+                  Unit %in% c("mile", "acre")) %>%
+  dplyr::mutate(Activity_Unit=paste0(Activity," (",str_to_title(Unit),"s)")) %>% 
+  dplyr::group_by(SubbasinActual, Activity_Unit) %>%
+  dplyr::summarise(Sum=sum(Quantity)) %>%
+  tidyr::spread(Activity_Unit, Sum)
+  
+
+# Riparian
+tbl.rip.final <- df.treatments %>%
+  dplyr::filter(ActivityType =="Riparian" & 
+                  Activity %in% c("Riparian tree planting", "Riparian fencing") & 
+                  Unit %in% c("mile", "acre")) %>%
+  dplyr::mutate(Activity_Unit=paste0(Activity," (",str_to_title(Unit),"s)")) %>% 
+  dplyr::group_by(SubbasinActual, Activity_Unit) %>%
+  dplyr::summarise(Sum=sum(Quantity)) %>%
+  tidyr::spread(Activity_Unit,Sum) %>%
+  dplyr::full_join(tbl.rip1, by="SubbasinActual") %>%
+  dplyr::rename(Subbasin=SubbasinActual)
+
+eval.rip <- ifelse(NROW(tbl.rip.final) > 0, TRUE, FALSE)
+
+# -- Road ----
+# check with OWEB on 'station' units?? Not being used here.
+
+tbl.road <- df.treatments %>%
+  dplyr::filter(ActivityType =="Road"
+                & TreatmentMetricLUID %in% c(2)) %>% 
+  dplyr::mutate(Activity_Unit=paste0(Activity," (",TreatmentMetric,")")) %>% 
+  dplyr::group_by(SubbasinActual, Activity_Unit) %>%
+  dplyr::summarise(Sum=sum(Quantity)) %>%
+  tidyr::spread(Activity_Unit,Sum) %>%
+  dplyr::rename(Subbasin=SubbasinActual)
+
+eval.road <- ifelse(NROW(tbl.road) > 0, TRUE, FALSE)
+
+# -- Upland ----
+
+tbl.upland1 <- df.treatments %>%
+  dplyr::filter(ActivityType =="Upland"
+                & Activity %in% c("Agriculture management",
+                                  "Conservation buffers",
+                                  "Conservation tillage",
+                                  "Irrigation system improvement")
+                & TreatmentMetricLUID %in% c(1, 2)) %>%
+  dplyr::mutate(TreatmentMetric=if_else(Unit=="acre", "acres treated", TreatmentMetric)) %>%
+  dplyr::mutate(Activity_Unit=paste0(Activity," (",TreatmentMetric,")")) %>% 
+  dplyr::group_by(SubbasinActual, Activity_Unit) %>%
+  dplyr::summarise(Sum=sum(Quantity)) %>%
+  tidyr::spread(Activity_Unit,Sum) %>%
+  dplyr::rename(Subbasin=SubbasinActual)
+
+tbl.upland2 <- df.treatments %>%
+  dplyr::filter(ActivityType =="Upland"
+                & Activity %in% c("Grazing management",
+                                  "Nutrient/manure management",
+                                  "Off-channel livestock or wildlife watering",
+                                  "Upland fencing")
+                & TreatmentMetricLUID %in% c(1, 2)) %>%
+  dplyr::mutate(TreatmentMetric=if_else(Unit=="acre", "acres treated", TreatmentMetric)) %>%
+  dplyr::mutate(Activity_Unit=paste0(Activity," (",TreatmentMetric,")")) %>% 
+  dplyr::group_by(SubbasinActual, Activity_Unit) %>%
+  dplyr::summarise(Sum=sum(Quantity)) %>%
+  tidyr::spread(Activity_Unit,Sum) %>%
+  dplyr::rename(Subbasin=SubbasinActual)
+
+
+tbl.upland3 <- df.treatments %>%
+  dplyr::filter(ActivityType =="Upland"
+                & Activity %in% c("Other upland activity",
+                                  "Terracing",
+                                  "Upland erosion control",
+                                  "Water/sediment control basins")
+                & TreatmentMetricLUID %in% c(1, 2)) %>%
+  dplyr::mutate(TreatmentMetric=if_else(Unit=="acre", "acres treated", TreatmentMetric)) %>%
+  dplyr::mutate(Activity_Unit=paste0(Activity," (",TreatmentMetric,")")) %>% 
+  dplyr::group_by(SubbasinActual, Activity_Unit) %>%
+  dplyr::summarise(Sum=sum(Quantity)) %>%
+  tidyr::spread(Activity_Unit,Sum) %>%
+  dplyr::rename(Subbasin=SubbasinActual)
+
+tbl.upland4 <- df.treatments %>%
+  dplyr::filter(ActivityType =="Upland"
+                & Activity %in% c("Upland invasive plant control",
+                                  "Upland tree planting",
+                                  "Upland vegetation management",
+                                  "Upland vegetation planting",
+                                  "Voluntary upland tree retention")
+                & TreatmentMetricLUID %in% c(1, 2)) %>%
+  dplyr::mutate(TreatmentMetric=if_else(Unit=="acre", "acres treated", TreatmentMetric)) %>%
+  dplyr::mutate(Activity_Unit=paste0(Activity," (",TreatmentMetric,")")) %>% 
+  dplyr::group_by(SubbasinActual, Activity_Unit) %>%
+  dplyr::summarise(Sum=sum(Quantity)) %>%
+  tidyr::spread(Activity_Unit,Sum) %>%
+  dplyr::rename(Subbasin=SubbasinActual)
+
+eval.upland1 <- ifelse(NROW(tbl.upland1) > 0, TRUE, FALSE)
+eval.upland2 <- ifelse(NROW(tbl.upland2) > 0, TRUE, FALSE)
+eval.upland3 <- ifelse(NROW(tbl.upland3) > 0, TRUE, FALSE)
+eval.upland4 <- ifelse(NROW(tbl.upland3) > 0, TRUE, FALSE)
+
+```
+
 ```{r OWEB-setup}
-
-library(ggplot2)
-
-#get.OWRI.huc8.names(owri.mdb=owri.db, complete.years=my.year)
 
 projects.df <- get.OWRI.projects(owri.mdb=owri.db,huc8.names=huc8.name, complete.years=my.year)
 
@@ -613,88 +948,20 @@ if(projects.n <= 0){
     
     projects.budget <- dollar(sum(as.numeric(projects.df$Total)))
     
-    projects.df <- projects.df[with(projects.df, order(SubbasinActual, ActivityTypes, ProjName)), c("SubbasinActual", "ProjName",
-                                                                                                    "ActivityTypes",  
-                                                                                                    "drvdProjDesc","Participants", "Results")]
+    projects.df <- projects.df[with(projects.df, order(SubbasinActual, ActivityTypes, ProjName)), c("SubbasinActual", "ProjName","ActivityTypes","drvdProjDesc","Participants", "Results")]
   
     colnames(projects.df) <- c("Subbasin","Project Name", "Project Type", "Project Description", "Participants", "Reported Outputs")
     
     txt.OWEB <- paste0("Based on the most recent data available in OWEB's Oregon Watershed Restoration Inventory (OWRI) database, there ",was.were(projects.n)," ",
                       numbers.to.words(projects.n),
-                      " OWEB funded project",s(projects.n)," completed in 2016 with a total cash and inkind budget of ",
+                      " OWEB funded project",s(projects.n)," completed in 2017 with a total cash and inkind budget of ",
                       projects.budget, 
-                      ". The bar graph in ",
-                      figs(name='figs.oweb_costs', display = 'cite'),
-                      " shows the total cash and inkind budget for the different project types in each ",
-                      owrd_basin," subbasin. ",
-                      tbls('tbl.OWEB_projects', display = 'cite'),
-                      " describes the project",s(projects.n)," and the reported outputs.")
+                      ". The tables below summarize reported outputs for different project activities in each ",
+                      owrd_basin," subbasin. ")
     
-    
-    # cost bar plot
-    oweb.costs <- get.OWRI.costs(owri.mdb=owri.db,huc8.names=huc8.name, complete.years=my.year)
-    
-    # put a return char into labels
-    oweb.costs$ActivityType <- factor(oweb.costs$ActivityType)
-    levels(oweb.costs$ActivityType) <- gsub(" ", "\n", levels(oweb.costs$ActivityType))
-    
-    # Find percent of Total per subbasin
-    #oweb.costs <- oweb.costs %>% 
-    #  group_by(ActivityType) %>% 
-    #  mutate(sum(Total))
-    
-    oweb.cost.plot <- gsub(" ", "", paste0(getwd(),"/pictures/oweb_cost_plot_",owrd_basin,".png"), fixed = TRUE)
-    
-    # bar plot no text
-    p1 <- ggplot(data=oweb.costs, aes(x=ActivityType, y=Total)) +
-      geom_bar(stat="identity", width = .95) +
-      scale_y_continuous(labels = scales::dollar) +
-      xlab("Project Activity Type") +
-      theme(axis.title.y=element_blank(),
-            axis.text.x=element_text(size=9, angle = 90, vjust = 0.5, hjust=1),
-            panel.grid.minor = element_blank()) +
-      facet_wrap(~SubbasinActual, ncol=3)
-
-    # bar plot
-    # p1 <- ggplot(data=oweb.costs, aes(x=ActivityType, y=Total)) +
-    #   geom_bar(stat="identity", width = .95) +
-    #   scale_y_continuous(labels = scales::dollar) +
-    #   geom_text(aes(label=dollar(Total)), position=position_dodge(width=0.9), vjust=-0.25, size = 2) +
-    #   ylim(0,max(oweb.costs$Total) + 60000) +
-    #   xlab("Project Type") +
-    #   theme(axis.title.y=element_blank(),
-    #         axis.text.y=element_blank(),
-    #         axis.ticks.y=element_blank(),
-    #         axis.text.x=element_text(size=7),
-    #         panel.grid.major.y = element_blank(), 
-    #         panel.grid.minor = element_blank()) +
-    #   facet_wrap(~SubbasinActual, ncol=3)
-    
-    # Bar plot of percent
-    # p2 <- ggplot(data=oweb.costs, aes(x=ActivityType, y=PercentTotal)) +
-    #   geom_bar(stat="identity", width = .95) +
-    #   geom_text(aes(label=percent(PercentTotal)), color="black", position=position_dodge(width=0.9), vjust=-0.5, size = 3.5) +
-    #   ylim(0,1.1) +
-    #   xlab("Project Type") +
-    #   theme(axis.title.y=element_blank(),
-    #         axis.text.y=element_blank(),
-    #         axis.ticks.y=element_blank(),
-    #         axis.text.x=element_text(size=9),
-    #         panel.grid.major.y = element_blank(), 
-    #         panel.grid.minor = element_blank()) +
-    #   facet_wrap(~SubbasinActual, ncol=3)
-
-    # Save the plot
-    ggsave(file=oweb.cost.plot,
-           plot=p1,
-           height=6,
-           width=6.5,
-           units="in")
-
 }
 
 ```
-
 
 The Oregon Watershed Enhancement Board (OWEB) is a state agency that provides grants to help Oregonians take care of local streams, rivers, wetlands, and natural areas. These grant projects often address nonpoint sources of pollution and are thus included in this report.
 
@@ -703,24 +970,125 @@ The Oregon Watershed Enhancement Board (OWEB) is a state agency that provides gr
 Learn more about OWEB grant programs at https://www.oregon.gov/OWEB/grants/Pages/grant-programs.aspx.
 
 
-```{r OWEB-costs, fig.cap=figs(name="figs.oweb_costs", caption= "Cash and inkind dollars spent in each subbasin for different project types completed in 2016, the most recent year data is available in OWEB's OWRI database.")}
+```{r table-estuarine-by-subbasin, results="asis", eval=eval.estuary}
 
-if(projects.n > 0){
-  # p1
-  include_graphics(gsub(" ", "", paste0("pictures/oweb_cost_plot_",owrd_basin,".png"), fixed = TRUE))
-}
+knitr::kable(tbl.estuary,
+             padding = 2, digits = 1, row.names = FALSE, 
+             caption = tbls(name = "table_estuarine_by_subbasin", 
+                            caption ="Summary of OWEB grant funded estuarine projects completed in 2017, the most recent year data is available in the OWEB OWRI database."))
+
+```
+
+```{r table-fish-by-subbasin, results="asis", eval=eval.fish}
+
+knitr::kable(tbl.fish.final,
+             padding = 2, digits = 1, row.names = FALSE, 
+             caption = tbls(name = "table_fish_by_subbasin", 
+                            caption ="Summary of OWEB grant funded fish passage projects completed in 2017, the most recent year data is available in the OWEB OWRI database."))
+
+
+```
+
+```{r table-instream1-by-subbasin, results="asis", eval=eval.instream1}
+
+knitr::kable(tbl.instream.final1,
+             padding = 2, digits = 1, row.names = FALSE, 
+             caption = tbls(name = "table_instream1_by_subbasin", 
+                            caption ="Summary of OWEB grant funded instream projects completed in 2017, the most recent year data is available in the OWEB OWRI database."))
+
+
+```
+
+```{r table-instream2-by-subbasin, results="asis", eval=eval.instream2}
+
+knitr::kable(tbl.instream.final2,
+             padding = 2, digits = 1, row.names = FALSE, 
+             caption = tbls(name = "table_instream2_by_subbasin", 
+                            caption ="Summary of OWEB grant funded instream projects (continued) completed in 2017, the most recent year data is available in the OWEB OWRI database."))
+
 
 ```
 
 
-```{r OWEB-projects-tbl, results="asis"}
-if(projects.n > 0){
-  print(knitr::kable(projects.df, format = "pandoc", padding = 2, digits = 1, row.names=FALSE, 
-                     caption = tbls(name="tbl.OWEB_projects", 
-                                    caption="OWEB grant funded projects completed in 2016, the most recent year data is available in the OWEB OWRI database.")))
-}
+```{r table-instream3-by-subbasin, results="asis", eval=eval.instream3}
+
+knitr::kable(tbl.instream.final3,
+             padding = 2, digits = 1, row.names = FALSE, 
+             caption = tbls(name = "table_instream3_by_subbasin", 
+                            caption ="Summary of OWEB grant funded instream projects completed (continued) in 2017, the most recent year data is available in the OWEB OWRI database."))
+
+
 ```
 
+```{r table-flow-by-subbasin, results="asis", eval=eval.flow}
+
+knitr::kable(tbl.flow,
+             padding = 2, digits = 1, row.names = FALSE, 
+             caption = tbls(name = "table_flow_by_subbasin", 
+                            caption ="Summary of OWEB grant funded instream flow projects completed in 2017, the most recent year data is available in the OWEB OWRI database."))
+
+
+```
+
+```{r table-riparian-by-subbasin, results="asis", eval=eval.rip}
+
+knitr::kable(tbl.rip.final,
+             padding = 2, digits = 1, row.names = FALSE, 
+             caption = tbls(name = "table_riparian_by_subbasin", 
+                            caption ="Summary of OWEB grant funded riparian projects completed in 2017, the most recent year data is available in the OWEB OWRI database."))
+
+
+```
+
+```{r table-road-by-subbasin, results="asis", eval=eval.road}
+
+knitr::kable(tbl.road,
+             padding = 2, digits = 1, row.names = FALSE, 
+             caption = tbls(name = "table_road_by_subbasin", 
+                            caption ="Summary of OWEB grant funded road projects completed in 2017, the most recent year data is available in the OWEB OWRI database."))
+
+
+```
+
+```{r table-upland1-by-subbasin, results="asis", eval=eval.upland1}
+
+knitr::kable(tbl.upland1,
+             padding = 2, digits = 1, row.names = FALSE, 
+             caption = tbls(name = "table_upland_by_subbasin", 
+                            caption ="Summary of OWEB grant funded upland projects completed in 2017, the most recent year data is available in the OWEB OWRI database."))
+
+
+```
+
+```{r table-upland2-by-subbasin, results="asis", eval=eval.upland2}
+
+knitr::kable(tbl.upland2,
+             padding = 2, digits = 1, row.names = FALSE, 
+             caption = tbls(name = "table_upland2_by_subbasin", 
+                            caption ="Summary of OWEB grant funded upland projects (continued) completed in 2017, the most recent year data is available in the OWEB OWRI database."))
+
+
+```
+
+```{r table-upland3-by-subbasin, results="asis", eval=eval.upland3}
+
+knitr::kable(tbl.upland3,
+             padding = 2, digits = 1, row.names = FALSE, 
+             caption = tbls(name = "table_upland3_by_subbasin", 
+                            caption ="Summary of OWEB grant funded upland projects (continued) completed in 2017, the most recent year data is available in the OWEB OWRI database."))
+
+
+```
+
+```{r table-upland4-by-subbasin, results="asis", eval=eval.upland4}
+
+knitr::kable(tbl.upland4,
+             padding = 2, digits = 1, row.names = FALSE, 
+             caption = tbls(name = "table_upland4_by_subbasin", 
+                            caption ="Summary of OWEB grant funded upland projects (continued) completed in 2017, the most recent year data is available in the OWEB OWRI database."))
+
+
+```
 
 ```{r dma-projects-setup, results="asis"}
 
@@ -728,14 +1096,14 @@ pix.df <- pix.df[NULL,]
 pix.cap <- NULL
 
 projects.df <- read_excel(path=paste0(lu_dir,"/Info_Integrated.xlsx"), sheet="5_TMDL_Implementation", na = c("","N/A", " "))
-tmdl.imp.df <-projects.df[projects.df$owrd_basin %in% owrd_basin, c("TMDL", "DMA_third_party", "actions")]
+tmdl.imp.df <-projects.df[projects.df$owrd_basin %in% owrd_basin, c("TMDL", "DMA", "actions")]
 
-colnames(tmdl.imp.df) <- c("TMDL", "DMA or Third Party", "Reported Actions")
+colnames(tmdl.imp.df) <- c("TMDL", "DMA", "Reported Actions")
 ```
 
 `r if(nrow(tmdl.imp.df) > 0){"## TMDL Implementation Highlights\n\n
 
-TMDL implementation actions taken by Designated Management Agencies (DMAs) or third parties are described in the table below. Most of these actions were summarized from annual reports submitted by DMAs to DEQ in calendar year 2017.\n\n"}`
+TMDL implementation actions taken by Designated Management Agencies (DMAs) or third parties are described in the table below. Most of these actions were summarized from annual reports submitted by DMAs to DEQ in calendar year 2018.\n\n"}`
 
 
 ```{r dma-projects, results="asis"}
@@ -744,15 +1112,15 @@ if(nrow(tmdl.imp.df) > 0){
   
   print(knitr::kable(tmdl.imp.df, format = "pandoc", padding = 2, digits = 1, row.names=FALSE, 
                      caption = tbls(name="tbl.dma_projects", 
-                                    caption="TMDL implementation activities reported in 2017 by Designated Management Agencies or third parties.")))
+                                    caption="TMDL implementation activities reported in 2018 by Designated Management Agencies or third parties.")))
   
-  pix.df <- projects.df[projects.df$owrd_basin %in% owrd_basin & 
-                          projects.df$picture == "Yes", c("picture", "picture_caption","picture_file")]
-  
-  if(nrow(pix.df) > 0){
-    pix.seed.df <- pix.df[sample(nrow(pix.df), size=1, replace = TRUE), c("picture_caption", "picture_file")]
-    pix.cap <- figs(name="TMDL_imp.fig",caption=pix.seed.df$picture_caption)
-  }
+  # pix.df <- projects.df[projects.df$owrd_basin %in% owrd_basin & 
+  #                         projects.df$picture == "Yes", c("picture", "picture_caption","picture_file")]
+  # 
+  # if(nrow(pix.df) > 0){
+  #   pix.seed.df <- pix.df[sample(nrow(pix.df), size=1, replace = TRUE), c("picture_caption", "picture_file")]
+  #   pix.cap <- figs(name="TMDL_imp.fig",caption=pix.seed.df$picture_caption)
+  # }
 }
 
 ```
