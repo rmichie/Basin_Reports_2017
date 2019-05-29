@@ -1,0 +1,274 @@
+---
+title: "Title Arial 28pt Bold"
+subtitle: "Subtitle Arial (12pt or 28pt) Bold"
+author: "Author: Arial 12pt Bold"
+date: "Date:  Month YYYY: Arial 12pt Bold"
+output:
+  word_document:
+    reference_docx: \\deqhq1\WQNPS\NPS_Annual_Reports\2017\Basin_Reports_2017\DEQ_word_gen_template.docx
+    fig_caption: yes
+    toc: yes
+  html_document:
+    df_print: paged
+    toc: yes
+---
+```{r setup, echo=FALSE, include=FALSE}
+require(knitr)
+
+knitr::opts_chunk$set(echo = FALSE,
+                      message = FALSE,
+                      warning=FALSE,
+                      error = FALSE,
+                      cache = FALSE,
+                      cache.comments = FALSE,
+                      include = TRUE,
+                      autodep = TRUE,
+                      fig.align = "center",
+                      eval=TRUE)
+
+require(captioner)
+
+tbls  <- captioner(prefix="Table A-", auto_space = FALSE)
+figs <- captioner(prefix="Figure A-", auto_space = FALSE)
+
+```
+
+------
+
+Name: Title
+Style type: Paragraph
+Style based on: Normal
+Style for following paragraph: Body Text
+
+Arial, 28 pt, Bold, Font color: Black
+Alignment: Left, Single Spacing
+
+Paragraph:
+Indentation Left: 0"
+Indentation Right: 0"
+Spacing Before:  24 pt
+Spacing After:  12 pt
+Line Spacing: Single
+
+------
+
+Name: Subtitle,  Author, Date
+Style type: Paragraph
+Style based on: Title
+Style for following paragraph: Body Text
+
+Arial, 12 pt, Bold, Font color: Black
+Alignment: Left, Single Spacing
+
+Paragraph:
+Indentation Left: 0"
+Indentation Right: 0"
+Spacing Before:  0 pt
+Spacing After:  6 pt
+Line Spacing: Single
+
+------
+
+# Header 1 Style
+
+Name: Header 1
+Style type: Paragraph
+Style based on: Normal
+Style for following paragraph: First Paragraph
+
+Arial, 28 pt, Bold, Font color: Black
+Alignment: Left, Single Spacing
+
+Paragraph:
+Indentation Left: 0"
+Indentation Right: 0"
+Spacing Before:  24 pt
+Spacing After:  6 pt
+Line Spacing: Single
+
+## Header 2 Style
+
+Name: Header 2
+Style type: Paragraph
+Style based on: Normal
+Style for following paragraph: First Paragraph
+
+Arial, 18 pt, Bold, Font color: Black
+Alignment: Left, Single Spacing
+
+Paragraph:
+Indentation Left: 0"
+Indentation Right: 0"
+Spacing Before:  12 pt
+Spacing After:  6 pt
+Line Spacing: Single
+
+### Header 3 Style
+
+Name: Header 3
+Style type: Paragraph
+Style based on: Normal
+Style for following paragraph: First Paragraph
+
+Arial, 11 pt, Bold, Font color: Black
+Alignment: Left, Single Spacing
+
+Paragraph:
+Indentation Left: 0"
+Indentation Right: 0"
+Spacing Before:  12 pt
+Spacing After:  6 pt
+Line Spacing: Single
+
+#### Header 4 Style
+
+Name: Header 4
+Style type: Paragraph
+Style based on: Normal
+Style for following paragraph: First Paragraph
+
+Arial, 11 pt, Bold, Font color: Black
+Alignment: Left, Single Spacing
+
+Paragraph:
+Indentation Left: 0"
+Indentation Right: 0"
+Spacing Before:  12 pt
+Spacing After:  6 pt
+Line Spacing: Single
+
+##### Header 5 Style
+
+Name: Header 5
+Style type: Paragraph
+Style based on: Normal
+Style for following paragraph: First Paragraph
+
+Arial, 11 pt, Font color: Black
+Alignment: Left, Single Spacing
+
+Paragraph:
+Indentation Left: 0"
+Indentation Right: 0"
+Spacing Before:  6 pt
+Spacing After:  6 pt
+Line Spacing: Single
+
+###### Header 6 Style
+
+Name: Header 6
+Style type: Paragraph
+Style based on: Normal
+Style for following paragraph: First Paragraph
+
+Arial, 11 pt, Italic, Font color: Black
+Alignment: Left, Single Spacing
+
+Paragraph:
+Indentation Left: 0"
+Indentation Right: 0"
+Spacing Before:  6 pt
+Spacing After:  6 pt
+Line Spacing: Single
+
+# Other Text Styles
+
+## Normal or Body Text Style
+
+Name: Normal or Body Text
+Style type: Paragraph
+Style based on: Normal
+Style for following paragraph: List Bullet
+
+Time New Roman, 11 pt, Font color: Black
+Alignment: Left, Single Spacing
+
+Paragraph:
+Indentation Left: 0"
+Indentation Right: 0"
+Spacing Before: 0 pt
+Spacing After:  12 pt
+Line Spacing: Single
+
+
+## List Bullet Style
+
+Name: List Bullet
+Style type: Paragraph
+Style based on: Normal
+Style for following paragraph: List Bullet
+
+Time New Roman, 11 pt, Font color: Black
+Alignment: Left, Single Spacing
+
+Paragraph:
+Indentation Left: 0"
+Indentation Right: 0"
+Spacing Before: 0 pt
+Spacing After:  12 pt
+Line Spacing: Single
+
+These are some bullets in 'List Bullet' Style:
+
+
+* One bullet
+* Two bullets
+* Three bullets
+
+
+## Captions
+
+```{r fig-1, fig.cap=figs(name="fig_1", caption= "Caption Arial, 9pt, Bold Color: Black")} 
+library(ggplot2)
+
+p1 <- ggplot(iris, aes(Petal.Width, Petal.Length, color=Species)) + geom_point()
+
+p1
+
+```
+
+
+For figure captions see `r figs('fig_1', display = 'cite')`.
+
+Name: Figure, Captioned Figure, or Caption
+Style type: Paragraph
+Style based on: Figure
+Style for following paragraph: Captioned Figure 
+
+Arial, 10 pt, Bold color: Black
+Alignment: Left, Single Spacing
+
+Paragraph:
+Indentation Left: 0"
+Indentation Right: 0"
+Spacing Before: 0 pt
+Spacing After:  12 pt
+Line Spacing: Single
+
+
+```{r tbl-1, results="asis"}
+
+knitr::kable(head(iris), padding = 2, digits = 1, caption=tbls(name="tbl_1", caption="table caption 1"))
+
+
+```
+
+
+For table captions, see `r tbls('tbl_1', display = 'cite')`.
+
+Name: Figure, Captioned Table, or Caption
+Style type: Paragraph
+Style based on: Figure
+Style for following paragraph: Captioned Figure
+
+Arial, 10 pt, Bold color: Black
+Alignment: Left, Single Spacing
+
+Paragraph:
+Indentation Left: 0"
+Indentation Right: 0"
+Spacing Before: 12 pt
+Spacing After:  0 pt
+Line Spacing: Single
+
+
