@@ -1,0 +1,116 @@
+FID,HUC_8,HU_8_NAME,AdminBasin,OWRD_BAS
+0,16040201,Upper Quinn,Owyhee,Owyhee
+1,16040205,Thousand-Virgin,Malheur Lake,Malheur Lake
+2,17050103,Middle Snake-Succor,Owyhee,Owyhee
+3,17050105,South Fork Owyhee,Owyhee,Owyhee
+4,17050106,East Little Owyhee,Owyhee,Owyhee
+5,17050107,Middle Owyhee,Owyhee,Owyhee
+6,17050108,Jordan,Owyhee,Owyhee
+7,17050109,Crooked-Rattlesnake,Owyhee,Owyhee
+8,17050110,Lower Owyhee,Owyhee,Owyhee
+9,17050115,Middle Snake-Payette,Malheur,Malheur
+10,17050116,Upper Malheur,Malheur,Malheur
+11,17050117,Lower Malheur,Malheur,Malheur
+12,17050118,Bully,Malheur,Malheur
+13,17050119,Willow,Malheur,Malheur
+14,17050201,Brownlee Reservoir,Powder,Powder
+15,17050202,Burnt,Powder,Powder
+16,17050203,Powder,Powder,Powder
+17,17060101,Hells Canyon,Grande Ronde,Grande Ronde
+18,17060102,Imnaha,Grande Ronde,Grande Ronde
+19,17060103,Lower Snake-Asotin,Grande Ronde,Grande Ronde
+20,17060104,Upper Grande Ronde,Grande Ronde,Grande Ronde
+21,17060105,Wallowa,Grande Ronde,Grande Ronde
+22,17060106,Lower Grande Ronde,Grande Ronde,Grande Ronde
+23,17070101,Middle Columbia-Lake Wallula,Umatilla,Umatilla
+24,17070102,Walla Walla,Umatilla,Umatilla
+25,17070103,Umatilla,Umatilla,Umatilla
+26,17070104,Willow,Umatilla,Umatilla
+27,17070105,Middle Columbia-Hood,Hood,Hood
+28,17070201,Upper John Day,John Day,John Day
+29,17070202,North Fork John Day,John Day,John Day
+30,17070203,Middle Fork John Day,John Day,John Day
+31,17070204,Lower John Day,John Day,John Day
+32,17070301,Upper Deschutes,Deschutes,Deschutes
+33,17070302,Little Deschutes,Deschutes,Deschutes
+34,17070303,Beaver - South Fork,Deschutes,Deschutes
+35,17070304,Upper Crooked,Deschutes,Deschutes
+36,17070305,Lower Crooked,Deschutes,Deschutes
+37,17070306,Lower Deschutes,Deschutes,Deschutes
+38,17070307,Trout,Deschutes,Deschutes
+39,17080001,Lower Columbia-Sandy,Sandy,Sandy
+40,17080003,Lower Columbia-Clatskanie,North Coast,North Coast
+41,17080006,Lower Columbia,North Coast,North Coast
+42,17090001,Middle Fork Willamette,Willamette,Willamette
+43,17090002,Coast Fork Willamette,Willamette,Willamette
+44,17090003,Upper Willamette,Willamette,Willamette
+45,17090004,McKenzie,Willamette,Willamette
+46,17090005,North Santiam,Willamette,Willamette
+47,17090006,South Santiam,Willamette,Willamette
+48,17090007,Middle Willamette,Willamette,Willamette
+49,17090008,Yamhill,Willamette,Willamette
+50,17090009,Molalla-Pudding,Willamette,Willamette
+51,17090010,Tualatin,Willamette,Willamette
+52,17090011,Clackamas,Willamette,Willamette
+53,17090012,Lower Willamette,Willamette,Willamette
+54,17100201,Necanicum,North Coast,North Coast
+55,17100202,Nehalem,North Coast,North Coast
+56,17100203,Wilson-Trask-Nestucca,North Coast,North Coast
+57,17100204,Siletz-Yaquina,Mid Coast,Mid Coast
+58,17100205,Alsea,Mid Coast,Mid Coast
+59,17100206,Siuslaw,Mid Coast,Mid Coast
+60,17100207,Siltcoos,Mid Coast,Mid Coast
+61,17100301,North Umpqua,Umpqua,Umpqua
+62,17100302,South Umpqua,Umpqua,Umpqua
+63,17100303,Umpqua,Umpqua,Umpqua
+64,17100304,Coos,South Coast,South Coast
+65,17100305,Coquille,South Coast,South Coast
+66,17100306,Sixes,South Coast,South Coast
+67,17100307,Upper Rogue,Rogue,Rogue
+68,17100308,Middle Rogue,Rogue,Rogue
+69,17100309,Applegate,Rogue,Rogue
+70,17100310,Lower Rogue,Rogue,Rogue
+71,17100311,Illinois,Rogue,Rogue
+72,17100312,Chetco,South Coast,South Coast
+73,17120001,Harney-Malheur Lakes,Malheur Lake,Malheur Lake
+74,17120002,Silvies,Malheur Lake,Malheur Lake
+75,17120003,Donner und Blitzen,Malheur Lake,Malheur Lake
+76,17120004,Silver,Malheur Lake,Malheur Lake
+77,17120005,Summer Lake,Goose & Summer Lakes,Goose & Summer Lakes
+78,17120006,Lake Abert,Goose & Summer Lakes,Goose & Summer Lakes
+79,17120007,Warner Lakes,Goose & Summer Lakes,Goose & Summer Lakes
+80,17120008,Guano,Malheur Lake,Malheur Lake
+81,17120009,Alvord Lake,Malheur Lake,Malheur Lake
+82,18010101,Smith,South Coast,South Coast
+83,18010201,Williamson,Klamath,Klamath
+84,18010202,Sprague,Klamath,Klamath
+85,18010203,Upper Klamath Lake,Klamath,Klamath
+86,18010204,Lost,Klamath,Klamath
+87,18010205,Butte,Klamath,Klamath
+88,18010206,Upper Klamath,Klamath,Klamath
+89,18010209,Lower Klamath,Klamath,Klamath
+90,18020001,Goose Lake,Goose & Summer Lakes,Goose & Summer Lakes
+91,17070201; 17070204,,,John Day
+92,18010204; 18010206,,,Klamath
+93,18010203; 18010204,,,Klamath
+94,17080003; 17080006,,,Columbia
+95,17080003; 17090012,,,Columbia
+96,17070101; 17070105,,,Columbia
+97,17070101; 17070105; 17080001; 17080003; 17080006; 17090012,,,Columbia
+98,17050107; 17050110,,,Owyhee
+99,17050116; 17050117,,,Malheur
+100,17050103; 17050115; 17050201,,,Snake
+101,17100308; 17100310,,,Rogue
+102,17100307; 17100308; 17100310,,,Rogue
+103,17090007; 17090012,,,Willamette
+104,17090003; 17090007,,,Willamette
+105,17070304; 17070305,,,Deschutes
+106,17070301; 17070306,,,Deschutes
+107,18010203; 18010204; 18010206,,,Klamath
+108,18010201; 18010203,,,Klamath
+109,17080001; 17090012,,,Columbia
+110,17060101; 17060103,,,Snake
+111,17060104; 17060106,,,Grande Ronde
+112,17050201; 17060101,,,Snake
+113,17120001; 17120003,,,Malheur Lake
+114,17090003; 17090007; 17090012,,,Willamette
